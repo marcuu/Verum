@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Verum</title>
+<meta name="color-scheme" content="light dark">
+<style>
+  :root{
+    --ink:#111; --ink-2:#444; --muted:#777; --line:#ececec; --bg:#fff;
+    --accent:#0f0f0f;
+    --done:#e8e8ef; --current:#111; --entry:#8b5cf6;
+    --w:12px;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#eaeaea; --ink-2:#cfcfcf; --muted:#9a9a9a; --line:#2a2a2a; --bg:#0c0c0c; --accent:#eaeaea;
+      --done:#1e1e24; --current:#eaeaea; --entry:#a78bfa;
+    }
+  }
+  @media (max-width: 640px){ :root{ --w:9px; } }
+
+  html,body{background:var(--bg); color:var(--ink);}
+  body{ max-width: 860px; margin: 6rem auto 4rem; padding: 0 1rem; }
+  header{ display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
+  h1{ font-size:1.5rem; margin:0; letter-spacing:.2px; }
+  .sub{ color:var(--muted); margin:.25rem 0 1rem; }
+  .brand{ display:flex; align-items:center; gap:.6rem; }
+  .moon{ width:28px; height:28px; border-radius:50%; background:var(--ink);
+         position:relative; box-shadow: inset -8px 0 0 0 var(--bg); }
+  #bar{ display:flex; gap:.5rem; align-items:center; margin-top:.5rem; }
+  input[type="text"], input[type="search"]{
+    flex:1; padding:.9rem 1rem; border:1px solid var(--line); border-radius:10px; font-size:1rem; background:transparent; color:var(--ink);
+  }
+  button{ padding:.9rem 1rem; border:1px solid var(--accent); background:var(--accent); color:var(--bg); border-radius:10px; cursor:pointer; }
+  button.ghost{ background:transparent; color:var(--ink); border-color:#bdbdbd; }
+  .hint{ color:var(--muted); font-size:.9rem; margin-top:.4rem; display:flex; gap:1rem; align-items:center;}
+  .hint b{ color:var(--ink-2); }
+  .counter{ margin-left:auto; }
+  #search{ width:100%; margin-top:.75rem; }
+  ul{ list-style:none; padding:0; margin:1rem 0 0; }
+  li{ display:flex; gap:1rem; align-items:flex-start; padding:.85rem 0; border-bottom:1px solid var(--line); }
+  .day{ color:var(--ink-2); min-width:7.5ch; padding-top:.15rem; }
+  .text{ flex:1; outline:none; border-radius:6px; padding:.15rem .25rem; }
+  .text:focus{ box-shadow: 0 0 0 2px rgba(127,127,127,.25); }
+  .actions{ display:flex; gap:.4rem; }
+  .pill{ display:inline-block; padding:.15rem .5rem; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:.75rem; }
+  .topline{ display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+
+  /* Life calendar */
+  .life{ margin-top:2.5rem; }
+  .life h3{ margin:.2rem 0 .6rem; }
+  .life-stats{ color:var(--muted); margin:.6rem 0 1rem; }
+
+  /* Each row is a year (age), always 52 columns */
+  .year-line{ display:grid; grid-template-columns: 56px repeat(52, var(--w)); grid-auto-rows: var(--w); gap:2px; margin-bottom:2px; }
+  @media (max-width: 640px){ .year-line{ grid-template-columns: 48px repeat(52, var(--w)); } }
+  .year-label{ font-size:.72rem; color:var(--muted); text-align:right; padding-right:.25rem; }
+  .year-label.bold{ color:var(--ink-2); font-weight:600; }
+
+  .cell{ position:relative; width:var(--w); height:var(--w); border:1px solid var(--line); border-radius:2px; background:transparent; }
+  .cell.done{ background:var(--done); }
+  .cell.current{ box-shadow: inset 0 0 0 2px var(--current); }
+  .cell .dot{ position:absolute; width:4px; height:4px; border-radius:50%; background:var(--entry);
+              left:50%; top:50%; transform:translate(-50%,-50%); }
+  /* A “double week” (53→52 compression) shows a tiny notch in the top-right corner */
+  .cell.double::after{
+    content:""; position:absolute; width:0; height:0; right:0; top:0;
+    border-top:6px solid var(--entry); border-left:6px solid transparent;
+    opacity:.55;
+  }
+
+  .life-legend{ display:flex; gap:1rem; align-items:center; margin-top:.6rem; color:var(--muted); font-size:.9rem; flex-wrap:wrap; }
+  .legend{ display:inline-flex; align-items:center; gap:.4rem; }
+  .legend::before{ content:""; display:inline-block; width:12px; height:12px; border-radius:2px; border:1px solid var(--line); background:transparent;}
+  .legend.done::before{ background:var(--done); }
+  .legend.current::before{ background:transparent; box-shadow: inset 0 0 0 2px var(--current); }
+  .legend.entry::before{ background:var(--entry); border-color:var(--entry); }
+  .legend.double::before{
+    background:linear-gradient(45deg, var(--entry) 0 49%, transparent 51% 100%);
+    border-color:var(--entry);
+    opacity:.55;
+  }
+
+  /* Quotes */
+  .quoteBox{margin:1.25rem 0 0; padding:1rem; border:1px solid var(--line); border-radius:14px;}
+  .qText{font-size:1.15rem; line-height:1.35; white-space:pre-wrap;}
+  .qAuthor{margin-top:.35rem; color:var(--muted);}
+  .qActions{display:flex; gap:.4rem; margin-top:.75rem;}
+  .qIcon{padding:.55rem .7rem; line-height:1; font-size:1.05rem;}
+  .qIcon[disabled]{opacity:.45; cursor:not-allowed;}
+
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="moon" aria-hidden="true"></div>
+      <div>
+        <h1>Verum</h1>
+        <div class="sub">daily journal</div>
+      </div>
+    </div>
+    <div class="topline">
+      <span id="todayPill" class="pill"></span>
+      <button id="exportBtn" class="ghost">Export</button>
+      <button id="signOutBtn" class="ghost">Change token</button>
+    </div>
+  </header>
+
+
+  <section class="quoteBox" aria-label="Daily quote">
+    <div class="qText" id="qText">Loading quote…</div>
+    <div class="qAuthor" id="qAuthor"></div>
+    <div class="qActions" aria-label="Quote actions">
+      <button id="qUp" class="ghost qIcon" type="button" aria-label="Thumbs up" title="Thumbs up">👍</button>
+      <button id="qDown" class="ghost qIcon" type="button" aria-label="Thumbs down" title="Thumbs down">👎</button>
+      <button id="qDel" class="ghost qIcon" type="button" aria-label="Delete quote" title="Delete">🗑️</button>
+    </div>
+  </section>
+
+
+  <div id="bar">
+    <input id="entry" type="text" placeholder="What happened today?" autocomplete="off" maxlength="280" />
+    <button id="saveBtn">Save (Enter)</button>
+  </div>
+  <div class="hint">
+    <span>Keys: <b>Enter</b> save · <b>Ctrl/⌘+S</b> save · <b>/</b> search</span>
+    <span class="counter"><span id="cc">0</span>/280</span>
+  </div>
+
+  <input id="search" type="search" placeholder="Search previous entries…" />
+  <ul id="list"></ul>
+
+  <section class="life" aria-labelledby="lifeTitle">
+    <h3 id="lifeTitle">Life calendar</h3>
+    <div class="life-stats" id="lifeStats"></div>
+    <div id="lifeWrap"></div>
+    <div class="life-legend">
+      <span class="legend done">Past</span>
+      <span class="legend current">This week</span>
+      <span class="legend entry">Has entry</span>
+      <span class="legend double">Compressed extra week</span>
+    </div>
+  </section>
+
+<script>
+// ======== CONFIG ========
+const API_BASE = "https://Marcuu.pythonanywhere.com/journal"; // change if needed
+const STORAGE_KEY = "verum_token";
+
+// Hardcoded life settings
+const DOB_FIXED = "1993-12-19"; // YYYY-MM-DD
+const EXP_FIXED = 108;          // years
+// ========================
+
+let token = localStorage.getItem(STORAGE_KEY);
+if (!token) {
+  token = prompt("Enter access token:");
+  if (token) localStorage.setItem(STORAGE_KEY, token);
+}
+
+const entry = document.getElementById("entry");
+const saveBtn = document.getElementById("saveBtn");
+const exportBtn = document.getElementById("exportBtn");
+const signOutBtn = document.getElementById("signOutBtn");
+const search = document.getElementById("search");
+const list = document.getElementById("list");
+const cc = document.getElementById("cc");
+const todayPill = document.getElementById("todayPill");
+const lifeWrap = document.getElementById("lifeWrap");
+
+const qText = document.getElementById("qText");
+const qAuthor = document.getElementById("qAuthor");
+const qUp = document.getElementById("qUp");
+const qDown = document.getElementById("qDown");
+const qDel = document.getElementById("qDel");
+let currentQuote = null;
+
+
+function todayISOUTC() {
+  const d = new Date();
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth()+1).padStart(2,'0');
+  const day = String(d.getUTCDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function labelToday(){
+  const d = new Date();
+  todayPill.textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day:'2-digit', month: 'short' });
+}
+function parseISODateUTC(s){ const [Y,M,D]=s.split("-").map(Number); return new Date(Date.UTC(Y,M-1,D)); }
+function addDaysUTC(d,n){ const c=new Date(d); c.setUTCDate(c.getUTCDate()+n); return c; }
+function addYearsUTC(d,n){ const c=new Date(d); c.setUTCFullYear(c.getUTCFullYear()+n); return c; }
+function mondayOfUTC(d){ const wd=d.getUTCDay(); const off=(wd+6)%7; return addDaysUTC(d,-off); }
+function daysBetween(a,b){ return Math.floor((b - a)/(24*3600*1000)); }
+
+// API helpers
+async function api(path, opts = {}) {
+  const headers = Object.assign(
+    { "X-Access-Token": token },
+    opts.headers || {},
+    opts.method === "POST" ? { "Content-Type": "application/json" } : {}
+  );
+  const res = await fetch(`${API_BASE}${path}`, { mode: "cors", ...opts, headers });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { msg += ` — ${await res.text()}` } catch {}
+    throw new Error(msg);
+  }
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json") ? res.json() : res.text();
+}
+
+async function fetchEntries(q=""){ return api("/api/entries" + (q ? `?q=${encodeURIComponent(q)}` : "")); }
+async function saveEntry(day, text){ return api("/api/entries", { method:"POST", body: JSON.stringify({day,text}) }); }
+async function deleteEntry(day){ return api(`/api/entries/${day}`, { method:"DELETE" }); }
+async function exportJSON(){ return api("/api/export.json"); }
+
+
+async function fetchDailyQuote(){ return api("/api/quotes/daily"); }
+async function voteQuote(delta){
+  if(!currentQuote) return;
+  const data = await api(`/api/quotes/${currentQuote.id}/vote`, { method:"POST", body: JSON.stringify({delta}) });
+  currentQuote = data.quote || null;
+  renderQuote();
+}
+async function deleteQuote(){
+  if(!currentQuote) return;
+  if(!confirm("Delete this quote?")) return;
+  await api(`/api/quotes/${currentQuote.id}`, { method:"DELETE" });
+  await refreshQuote();
+}
+function setQuoteButtons(on){
+  const dis = !on;
+  qUp.disabled = dis; qDown.disabled = dis; qDel.disabled = dis;
+}
+function renderQuote(){
+  if(!qText) return;
+  if(!currentQuote){
+    qText.textContent = "No quotes yet. Add via Postman or Shortcuts.";
+    qAuthor.textContent = "";
+    setQuoteButtons(false);
+    return;
+  }
+  qText.textContent = "“" + currentQuote.text + "”";
+  qAuthor.textContent = currentQuote.author ? ("— " + currentQuote.author) : "";
+  setQuoteButtons(true);
+}
+async function refreshQuote(){
+  if(!qText) return;
+  qText.textContent = "Loading quote…";
+  qAuthor.textContent = "";
+  setQuoteButtons(false);
+  try{
+    const data = await fetchDailyQuote();
+    currentQuote = data && data.quote ? data.quote : null;
+    renderQuote();
+  }catch(e){
+    qText.textContent = "Quote unavailable.";
+    qAuthor.textContent = "";
+    setQuoteButtons(false);
+  }
+}
+
+if(qUp){
+  qUp.onclick = ()=>voteQuote(1);
+  qDown.onclick = ()=>voteQuote(-1);
+  qDel.onclick = ()=>deleteQuote();
+}
+
+
+function render(entries){
+  list.innerHTML = "";
+  for (const e of entries){
+    const li = document.createElement("li");
+    const left = document.createElement("div"); left.className="day"; left.textContent=e.day;
+    const mid = document.createElement("div"); mid.className="text"; mid.contentEditable=true; mid.spellcheck=false; mid.textContent=e.text;
+    mid.addEventListener("keydown", async ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); mid.blur(); } });
+    mid.addEventListener("blur", async ()=>{ const newText=mid.textContent.trim(); if(newText && newText!==e.text){ try{ await saveEntry(e.day,newText); e.text=newText; }catch{ mid.textContent=e.text; } } else { mid.textContent=e.text; } });
+    const actions=document.createElement("div"); actions.className="actions";
+    const del=Object.assign(document.createElement("button"),{className:"ghost",textContent:"Delete"});
+    del.onclick=async()=>{ if(confirm(`Delete ${e.day}?`)){ await deleteEntry(e.day); await refresh(); } };
+    actions.appendChild(del);
+    li.appendChild(left); li.appendChild(mid); li.appendChild(actions);
+    list.appendChild(li);
+  }
+}
+
+/**
+ * Clean-rows life calendar:
+ * - For each age-year, compute actual week-count (52 or 53) from ISO-week Mondays between birthdays.
+ * - Map those weeks proportionally into exactly 52 columns via x = floor(i * 52 / nWeeks).
+ * - Merge collisions in the same cell; mark “double” when multiple weeks map to a single cell.
+ * - Past/current/entry flags are ORed across merged weeks.
+ */
+function renderLifeCalendar(entries){
+  lifeWrap.innerHTML = "";
+
+  const dobDate   = parseISODateUTC(DOB_FIXED);
+  const dobMonday = mondayOfUTC(dobDate);
+  const years     = EXP_FIXED;
+
+  // Quick lookup: Monday-index since DOB that have entries
+  const entryWeeks = new Set();
+  for (const e of entries){
+    try{
+      const m = mondayOfUTC(parseISODateUTC(e.day));
+      const idx = Math.floor(daysBetween(dobMonday, m)/7);
+      if (idx >= 0) entryWeeks.add(idx);
+    }catch{}
+  }
+
+  const todayMon   = mondayOfUTC(new Date());
+  const currentIdx = Math.floor(daysBetween(dobMonday, todayMon)/7);
+
+  let globalWeekIdx = 0; // counts actual ISO-week Mondays since dobMonday
+
+  for (let age = 0; age < years; age++){
+    // Start/end birthdays for this age
+    const start = new Date(Date.UTC(dobDate.getUTCFullYear()+age, dobDate.getUTCMonth(), dobDate.getUTCDate()));
+    const end   = addYearsUTC(start, 1);
+
+    // ISO-week Mondays enclosing this age span
+    let wStart = mondayOfUTC(start);
+    const wEnd = mondayOfUTC(end);
+
+    // Collect all Mondays (actual weeks) within this age-year
+    const mondays = [];
+    while (wStart < wEnd) { mondays.push(new Date(wStart)); wStart = addDaysUTC(wStart, 7); }
+
+    // Map actual weeks (N=52 or 53) → exactly 52 columns
+    const N = mondays.length; // 52 or 53
+    const bins = Array.from({length:52}, () => ({
+      hasPast:false, isCurrent:false, hasEntry:false, weeks:[], // store week indices for tooltip
+      weekStart:null, weekEnd:null
+    }));
+
+    for (let i=0; i<N; i++){
+      const binX = Math.floor(i * 52 / N); // proportional mapping
+      const mStart = mondays[i];
+      const mEnd = addDaysUTC(mStart, 6);
+      const idxSinceDOB = globalWeekIdx + i; // tentative — corrected below after loop
+
+      const b = bins[binX];
+      b.weeks.push(i);
+      if (!b.weekStart || mStart < b.weekStart) b.weekStart = mStart;
+      if (!b.weekEnd   || mEnd   > b.weekEnd  ) b.weekEnd   = mEnd;
+    }
+
+    // Now set state flags using absolute week indexes
+    // We need the absolute index for each i; absolute index of bin's i = base + i, base = globalWeekIdx
+    for (let x=0; x<52; x++){
+      const b = bins[x];
+      if (b.weeks.length === 0) continue;
+      for (const i of b.weeks){
+        const abs = globalWeekIdx + i;
+        if (abs < currentIdx) b.hasPast = true;
+        if (abs === currentIdx) b.isCurrent = true;
+        if (entryWeeks.has(abs)) b.hasEntry = true;
+      }
+    }
+
+    // Render row (always 52 cells)
+    const row = document.createElement("div");
+    row.className = "year-line";
+
+    const lbl = document.createElement("div");
+    lbl.className = "year-label" + (age % 10 === 0 ? " bold" : "");
+    lbl.textContent = (age % 10 === 0) ? `Age ${age}` : "";
+    row.appendChild(lbl);
+
+    for (let x=0; x<52; x++){
+      const b = bins[x];
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      if (b.weeks.length > 1) cell.classList.add("double");
+      if (b.hasPast) cell.classList.add("done");
+      if (b.isCurrent) cell.classList.add("current");
+      if (b.hasEntry){ const dot=document.createElement("div"); dot.className="dot"; cell.appendChild(dot); }
+
+      // Tooltip
+      if (b.weekStart && b.weekEnd){
+        const span = (b.weeks.length>1) ? ` (compressed ${b.weeks.length} weeks)` : "";
+        cell.title = `${b.weekStart.toISOString().slice(0,10)} → ${b.weekEnd.toISOString().slice(0,10)} (Age ${age})${span}`;
+      }else{
+        cell.title = `Age ${age}`;
+      }
+      row.appendChild(cell);
+    }
+
+    lifeWrap.appendChild(row);
+
+    // Advance absolute index by the *actual* number of weeks in this age
+    globalWeekIdx += N;
+  }
+
+  // Stats
+  const totalWeeks = globalWeekIdx; // true weeks across all ages rendered so far
+  const elapsed = Math.min(totalWeeks, currentIdx+1);
+  const pct = ((elapsed/totalWeeks)*100).toFixed(1);
+  document.getElementById("lifeStats").textContent = `${elapsed}/${totalWeeks} weeks (${pct}%)`;
+}
+
+async function refresh(){
+  labelToday();
+  try {
+    const data = await fetchEntries(search.value.trim());
+    // Render list and prefill today
+    list.innerHTML = "";
+    for (const e of data){
+      const li = document.createElement("li");
+      const left = document.createElement("div"); left.className="day"; left.textContent=e.day;
+      const mid = document.createElement("div"); mid.className="text"; mid.contentEditable=true; mid.spellcheck=false; mid.textContent=e.text;
+      mid.addEventListener("keydown", async ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); mid.blur(); } });
+      mid.addEventListener("blur", async ()=>{ const newText=mid.textContent.trim(); if(newText && newText!==e.text){ try{ await saveEntry(e.day,newText); e.text=newText; }catch{ mid.textContent=e.text; } } else { mid.textContent=e.text; } });
+      const actions=document.createElement("div"); actions.className="actions";
+      const del=Object.assign(document.createElement("button"),{className:"ghost",textContent:"Delete"});
+      del.onclick=async()=>{ if(confirm(`Delete ${e.day}?`)){ await deleteEntry(e.day); await refresh(); } };
+      actions.appendChild(del);
+      li.appendChild(left); li.appendChild(mid); li.appendChild(actions);
+      list.appendChild(li);
+    }
+    const today = data.find(e=>e.day===todayISOUTC()); if(today) entry.value=today.text;
+
+    renderLifeCalendar(data);
+    await refreshQuote();
+  } catch(e){ alert("Error loading entries. Check API_BASE, token, and CORS.\n\n" + e.message); }
+}
+
+saveBtn.onclick=async()=>{ const text=entry.value.trim(); if(!text)return; try{ await saveEntry(todayISOUTC(),text); await refresh(); refreshQuote(); entry.focus(); entry.select(); }catch(e){ alert("Save failed: "+e.message);} };
+exportBtn.onclick=async()=>{ try{ const data=await exportJSON(); const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="verum-export.json"; a.click(); }catch(e){ alert("Export failed: "+e.message);} };
+signOutBtn.onclick=()=>{ localStorage.removeItem(STORAGE_KEY); location.reload(); };
+
+entry.addEventListener("input",()=>{ cc.textContent=entry.value.length; });
+document.addEventListener("keydown",(e)=>{ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){ e.preventDefault(); saveBtn.click(); } if(e.key==="/"){ e.preventDefault(); search.focus(); } });
+entry.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); saveBtn.click(); } });
+
+refresh(); refreshQuote(); entry.focus();
+</script>
+</body>
+</html>
