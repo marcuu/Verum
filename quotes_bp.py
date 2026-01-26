@@ -14,6 +14,11 @@ QUOTES_TOKEN = os.environ.get("QUOTES_ACCESS_TOKEN") or ACCESS_TOKEN
 
 _ALLOWED = os.environ.get("JOURNAL_ALLOWED_ORIGIN", "")
 ALLOWED_ORIGINS = [o.strip() for o in _ALLOWED.split(",") if o.strip()]
+# Always allow these origins (hardcoded fallback)
+_HARDCODED_ORIGINS = ["https://marcusburgess.co.uk", "https://www.marcusburgess.co.uk"]
+for _o in _HARDCODED_ORIGINS:
+    if _o not in ALLOWED_ORIGINS:
+        ALLOWED_ORIGINS.append(_o)
 PUBLIC_READ = os.environ.get("JOURNAL_PUBLIC_READ", "false").lower() == "true"
 
 # Rate limit (reuse journal values)
