@@ -222,9 +222,16 @@ async function exportJSON(){ return api("/api/export.json"); }
 async function fetchDailyQuote(){ return api("/api/quotes/daily"); }
 async function voteQuote(delta){
   if(!currentQuote) return;
-  const data = await api(`/api/quotes/${currentQuote.id}/vote`, { method:"POST", body: JSON.stringify({delta}) });
-  currentQuote = data.quote || null;
-  renderQuote();
+  if(qUp.disabled) return; // prevent double-clicks while processing
+  setQuoteButtons(false); // disable buttons while processing
+  try {
+    const data = await api(`/api/quotes/${currentQuote.id}/vote`, { method:"POST", body: JSON.stringify({delta}) });
+    currentQuote = data.quote || null;
+    renderQuote();
+  } catch(e) {
+    alert("Vote failed: " + e.message);
+    setQuoteButtons(true); // re-enable buttons on error
+  }
 }
 async function deleteQuote(){
   if(!currentQuote) return;

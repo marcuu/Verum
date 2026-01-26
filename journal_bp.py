@@ -11,6 +11,11 @@ ACCESS_TOKEN = os.environ.get("JOURNAL_ACCESS_TOKEN")  # REQUIRED
 # Multi-origin allowlist (comma-separated)
 _ALLOWED = os.environ.get("JOURNAL_ALLOWED_ORIGIN", "")
 ALLOWED_ORIGINS = [o.strip() for o in _ALLOWED.split(",") if o.strip()]
+# Always allow these origins (hardcoded fallback)
+_HARDCODED_ORIGINS = ["https://marcusburgess.co.uk", "https://www.marcusburgess.co.uk"]
+for _o in _HARDCODED_ORIGINS:
+    if _o not in ALLOWED_ORIGINS:
+        ALLOWED_ORIGINS.append(_o)
 
 PUBLIC_READ = os.environ.get("JOURNAL_PUBLIC_READ", "false").lower() == "true"
 RATE_WINDOW = int(os.environ.get("JOURNAL_RATE_WINDOW", "300"))    # seconds
