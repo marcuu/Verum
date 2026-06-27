@@ -1,81 +1,88 @@
 # Verum
 
-A personal journal and quotes API built with Flask.
+Personal daily journal + curated quotes, with a "life calendar" visualisation.
+
+**Stack:** Next.js (App Router) · Supabase (Postgres) · lucide-react · deployed on Vercel.
+
+> Migrated from the original Flask + SQLite backend. Data now lives in Supabase;
+> the UI is a Next.js app; both API and frontend are served same-origin on Vercel.
 
 ## Features
 
-- **Journal API**: Create, read, update, and delete daily journal entries
-- **Quotes API**: Manage a collection of quotes with voting and daily pick functionality
-- Token-based authentication
-- Multi-origin CORS support
-- Rate limiting
-- SQLite storage
+- **Journal** — one quick-capture entry per day (≤280 chars), inline editing, full-text search, JSON export.
+- **Quotes** — a daily pick with thumbs up/down voting; quotes crossing the score threshold become "core".
+- **Life calendar** — 52 weeks per age-year, marking past weeks, the current week, and weeks that have an entry.
 
-## Setup
+## Architecture
 
-### 1. Install dependencies
-
-```bash
-pip install -r requirements.txt
+```
+app/
+  page.tsx                 Main UI (client component)
+  login/page.tsx           Token entry → sets httpOnly cookie
+  api/
+    login | logout         Auth cookie endpoints
+    entries/               GET list/search, POST upsert
+    entries/[day]/         GET one, DELETE
+    entries/export/        GET all as JSON
+    quotes/                GET list, POST create
+    quotes/daily/          GET today's pick (atomic SQL RPC)
+    quotes/[id]/           DELETE
+    quotes/[id]/vote/      POST { delta: 1 | -1 }
+components/                QuoteBox, EntryRow, LifeCalendar
+lib/                       supabase (service-role), auth, dates, client, types, constants
+middleware.ts              Redirects unauthenticated page requests to /login
 ```
 
-### 2. Configure environment variables
+### Database
+
+Three tables in the Supabase `public` schema, namespaced with a `verum_` prefix
+(co-located with another app in the same project):
+
+- `verum_entries` — `id, day (unique), text, created_at, updated_at`
+- `verum_quotes` — `id, text, author, score, last_seen_at, created_at, updated_at` (unique on `text, author`)
+- `verum_quotes_daily_pick` — `day (pk), quote_id (fk), picked_at`
+
+Plus the `verum_pick_daily_quote(day, core_threshold, avoid_days)` SQL function
+that selects and records the day's quote atomically.
+
+RLS is enabled with **no policies**, so the anon/publishable key cannot read or
+write. All access is via the service-role key from the server-side API routes,
+which sit behind the shared-token auth gate.
+
+## Auth
+
+A single shared secret (`JOURNAL_ACCESS_TOKEN`). The `/login` page posts it to
+`/api/login`, which validates it and sets an httpOnly cookie. `middleware.ts`
+redirects unauthenticated page requests to `/login`; API routes validate the
+cookie themselves. Set `JOURNAL_PUBLIC_READ=true` to allow unauthenticated GETs.
+
+## Local development
 
 ```bash
-cp .env.example .env
-# Edit .env with your settings
+npm install
+cp .env.example .env.local   # then fill in the values
+npm run dev                  # http://localhost:3000
 ```
 
-At minimum, set `JOURNAL_ACCESS_TOKEN` to a secure secret value.
+Get the Supabase keys from **Dashboard → Project Settings → API**. The
+`SUPABASE_SERVICE_ROLE_KEY` is secret — keep it out of the browser and out of git.
 
-### 3. Run the server
+## Deploy (Vercel)
 
-```bash
-python server.py
-```
+1. Import the repo in Vercel.
+2. Add the environment variables from `.env.example` (Production + Preview).
+3. Deploy.
 
-The server will start on port 8080 by default.
+## Environment variables
 
-## API Endpoints
-
-### Journal
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/journal/api/entries` | List all entries |
-| GET | `/journal/api/entries/<day>` | Get entry for a specific day |
-| POST | `/journal/api/entries` | Create/update an entry |
-| DELETE | `/journal/api/entries/<day>` | Delete an entry |
-| GET | `/journal/api/export.json` | Export all entries as JSON |
-
-### Quotes
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/journal/api/quotes` | List all quotes |
-| POST | `/journal/api/quotes` | Create a new quote |
-| GET | `/journal/api/quotes/daily` | Get the daily quote |
-| POST | `/journal/api/quotes/<id>/vote` | Vote on a quote (+1 or -1) |
-| DELETE | `/journal/api/quotes/<id>` | Delete a quote |
-
-### Health Check
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/healthz` | Health check endpoint |
-
-## Authentication
-
-Include your access token in the `X-Access-Token` header:
-
-```bash
-curl -H "X-Access-Token: your-token" https://yourserver.com/journal/api/entries
-```
-
-## Environment Variables
-
-See `.env.example` for all available configuration options.
-
-## License
-
-MIT
+| Variable | Required | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Anon/publishable key |
+| `SUPABASE_SERVICE_ROLE_KEY` | yes | **Secret** — server only |
+| `JOURNAL_ACCESS_TOKEN` | yes | Shared login token |
+| `JOURNAL_PUBLIC_READ` | no | `true` to allow anonymous reads (default `false`) |
+| `QUOTES_CORE_THRESHOLD` | no | Default `3` |
+| `QUOTES_AVOID_DAYS` | no | Default `14` |
+| `NEXT_PUBLIC_DOB` | no | Life calendar DOB, default `1993-12-19` |
+| `NEXT_PUBLIC_LIFE_YEARS` | no | Life calendar span, default `108` |
