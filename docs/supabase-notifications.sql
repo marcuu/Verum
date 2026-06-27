@@ -56,6 +56,7 @@ create table if not exists verum_notification_deliveries (
   notification_type text not null,
   logical_day date,
   logical_week text,
+  logical_month text,
   payload jsonb not null default '{}',
   status text not null default 'sent',
   error text,
@@ -69,6 +70,10 @@ where logical_day is not null;
 create unique index if not exists verum_notification_one_weekly_delivery
 on verum_notification_deliveries(subscription_id, notification_type, logical_week)
 where logical_week is not null;
+
+create unique index if not exists verum_notification_one_monthly_delivery
+on verum_notification_deliveries(subscription_id, notification_type, logical_month)
+where logical_month is not null;
 
 -- Match the other verum_* tables: RLS enabled with no policies, so the anon key
 -- cannot read or write. All access is via the service-role key (server-only),

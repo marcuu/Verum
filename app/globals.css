@@ -429,6 +429,36 @@ li:focus-within .actions {
   width: auto;
 }
 
+/* one block per notification type, kept calm and stacked */
+.notification-group {
+  margin-top: calc(var(--s) * 2.5);
+}
+
+.notification-group .empty {
+  padding: 0.25rem 0 0.5rem;
+}
+
+.notification-group .notification-row {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.notification-group input[type="time"],
+.notification-group input[type="number"],
+.notification-group select {
+  width: auto;
+  padding: 0.35rem 0.4rem;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font: inherit;
+}
+
+.notification-group input[type="number"] {
+  width: 4.5rem;
+}
+
 /* ============ ZONE 3 — LIFE ============ */
 .life {
   margin-top: calc(var(--s) * 5);
