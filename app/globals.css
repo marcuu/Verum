@@ -357,25 +357,34 @@ li:focus-within .actions {
 }
 
 /* Fluid grid: 52 columns sized as fractions of the available width, so the
-   calendar always fits the viewport and never forces horizontal overflow. */
+   calendar always fits the viewport and never forces horizontal overflow.
+   The age label is absolutely positioned (reserved via padding-left) so it
+   never inflates the row height — every row is exactly one cell tall. */
 .year-line {
+  position: relative;
   display: grid;
-  grid-template-columns: var(--label) repeat(52, 1fr);
+  grid-template-columns: repeat(52, 1fr);
   gap: var(--cell-gap);
   margin-bottom: var(--cell-gap);
-  align-items: center;
+  padding-left: var(--label);
 }
 
 .year-label {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: calc(var(--label) - 0.4rem);
   font-size: 0.72rem;
+  line-height: 1;
   color: var(--muted);
   text-align: right;
-  padding-right: 0.25rem;
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {
   .year-label {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
   }
 }
 
@@ -389,7 +398,7 @@ li:focus-within .actions {
   width: 100%;
   aspect-ratio: 1;
   border: 1px solid var(--line);
-  border-radius: 2px;
+  border-radius: 1px;
   background: transparent;
 }
 
