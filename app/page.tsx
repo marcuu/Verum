@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut, Search } from "lucide-react";
+import { Download, LogOut, Search, Quote as QuoteIcon, List, Grid3x3 } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
@@ -16,7 +16,10 @@ import NotificationSettings from "@/components/NotificationSettings";
 type FlashAction = { label: string; run: () => void | Promise<void> };
 type FlashState = { message: string; action?: FlashAction };
 
+type Tab = "quote" | "record" | "life";
+
 export default function Home() {
+  const [tab, setTab] = useState<Tab>("quote");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -267,6 +270,7 @@ export default function Home() {
 
   // ---- search reveal ----
   const openSearch = useCallback(() => {
+    setTab("record");
     setSearchOpen(true);
     requestAnimationFrame(() => searchRef.current?.focus());
   }, []);
@@ -340,7 +344,11 @@ export default function Home() {
       </header>
 
       {/* ===== ZONE 1 — TODAY ===== */}
-      <section className="today" aria-label="Today">
+      <section
+        className="today"
+        aria-label="Today"
+        hidden={tab !== "quote"}
+      >
         <p className="overline today-date">{todayLabel}</p>
         <div className="capture capture-row">
           <input
@@ -379,7 +387,11 @@ export default function Home() {
       </section>
 
       {/* ===== ZONE 2 — RECORD ===== */}
-      <section className="record" aria-label="Earlier entries">
+      <section
+        className="record"
+        aria-label="Earlier entries"
+        hidden={tab !== "record"}
+      >
         <div className="record-head">
           <p className="overline">Record</p>
           <button
@@ -452,7 +464,40 @@ export default function Home() {
       <NotificationSettings />
 
       {/* ===== ZONE 3 — LIFE ===== */}
-      <LifeCalendar entries={entries} />
+      <div hidden={tab !== "life"}>
+        <LifeCalendar entries={entries} />
+      </div>
+
+      {/* ===== BOTTOM NAV ===== */}
+      <nav className="bottom-nav" aria-label="Sections">
+        <button
+          type="button"
+          className={"nav-tab" + (tab === "quote" ? " active" : "")}
+          aria-current={tab === "quote" ? "page" : undefined}
+          onClick={() => setTab("quote")}
+        >
+          <QuoteIcon size={20} />
+          <span>Quote</span>
+        </button>
+        <button
+          type="button"
+          className={"nav-tab" + (tab === "record" ? " active" : "")}
+          aria-current={tab === "record" ? "page" : undefined}
+          onClick={() => setTab("record")}
+        >
+          <List size={20} />
+          <span>Record</span>
+        </button>
+        <button
+          type="button"
+          className={"nav-tab" + (tab === "life" ? " active" : "")}
+          aria-current={tab === "life" ? "page" : undefined}
+          onClick={() => setTab("life")}
+        >
+          <Grid3x3 size={20} />
+          <span>Life</span>
+        </button>
+      </nav>
 
       {flash && (
         <div className="flash" role="status">
