@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut } from "lucide-react";
+import { Download, LogOut, Search } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
@@ -11,10 +11,15 @@ import EntryRow from "@/components/EntryRow";
 import LifeCalendar from "@/components/LifeCalendar";
 import StreakBanner from "@/components/StreakBanner";
 
+type FlashAction = { label: string; run: () => void | Promise<void> };
+type FlashState = { message: string; action?: FlashAction };
+
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [draft, setDraft] = useState("");
+  const [savedDraft, setSavedDraft] = useState("");
   const [todayLabel, setTodayLabel] = useState("");
   const [streak, setStreak] = useState<StreakInfo | null>(null);
   const [hasLoggedToday, setHasLoggedToday] = useState(false);
@@ -23,8 +28,24 @@ export default function Home() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
 
+  const [flash, setFlash] = useState<FlashState | null>(null);
+
   const searchRef = useRef<HTMLInputElement>(null);
   const entryRef = useRef<HTMLInputElement>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ---- inline feedback (replaces alert/confirm) ----
+  const showFlash = useCallback(
+    (message: string, action?: FlashAction, ms = 6000) => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+      setFlash({ message, action });
+      flashTimer.current = setTimeout(() => setFlash(null), ms);
+    },
+    []
+  );
+  useEffect(() => () => {
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+  }, []);
 
   // ---- data ----
   // Returns today's entry if found (only on unfiltered fetches).
@@ -36,7 +57,10 @@ export default function Home() {
     if (!q) {
       const today = todayISOUTC();
       const todayEntry = data.find((e) => e.day === today);
-      if (todayEntry) setDraft(todayEntry.text);
+      if (todayEntry) {
+        setDraft(todayEntry.text);
+        setSavedDraft(todayEntry.text);
+      }
       const info = computeStreak(data.map((e) => e.day), today);
       setStreak(info);
       setHasLoggedToday(info.loggedToday);
@@ -62,19 +86,17 @@ export default function Home() {
     const d = new Date();
     setTodayLabel(
       d.toLocaleDateString("en-GB", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
       })
     );
     loadEntries("")
       .then((todayEntry) => {
         if (todayEntry) refreshQuote();
       })
-      .catch((e) =>
-        alert("Error loading entries.\n\n" + (e as Error).message)
-      );
-  }, [loadEntries, refreshQuote]);
+      .catch(() => showFlash("Couldn't load your entries. Reload to retry."));
+  }, [loadEntries, refreshQuote, showFlash]);
 
   // debounced search
   useEffect(() => {
@@ -97,31 +119,63 @@ export default function Home() {
 
   const onSaveDraft = useCallback(async () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || text === savedDraft) return;
     try {
       await saveEntry(todayISOUTC(), text);
       // Always reload full list so streak + hasLoggedToday are recomputed correctly.
       await loadEntries("");
+      setSavedDraft(text);
       setHasLoggedToday(true);
       refreshQuote();
       entryRef.current?.focus();
       entryRef.current?.select();
-    } catch (e) {
-      alert("Save failed: " + (e as Error).message);
+    } catch {
+      showFlash("Couldn't save. Try again.");
     }
-  }, [draft, saveEntry, loadEntries, refreshQuote]);
+  }, [draft, savedDraft, saveEntry, loadEntries, refreshQuote, showFlash]);
 
   const onDeleteEntry = useCallback(
     async (day: string) => {
-      if (!confirm(`Delete ${day}?`)) return;
+      const victim = entries.find((e) => e.day === day);
+      if (!victim) return;
+      const prev = entries;
+      const next = entries.filter((e) => e.day !== day);
+      const filtering = !!search.trim();
+
+      // Optimistic removal; recompute streak locally when viewing the full list.
+      setEntries(next);
+      if (!filtering) {
+        const info = computeStreak(next.map((e) => e.day), todayISOUTC());
+        setStreak(info);
+        setHasLoggedToday(info.loggedToday);
+      }
+
       try {
         await api(`/entries/${day}`, { method: "DELETE" });
-        await loadEntries("");
-      } catch (e) {
-        alert("Delete failed: " + (e as Error).message);
+      } catch {
+        setEntries(prev);
+        if (!filtering) {
+          const info = computeStreak(prev.map((e) => e.day), todayISOUTC());
+          setStreak(info);
+          setHasLoggedToday(info.loggedToday);
+        }
+        showFlash("Couldn't delete that entry.");
+        return;
       }
+
+      showFlash(`Deleted ${day}.`, {
+        label: "Undo",
+        run: async () => {
+          try {
+            await saveEntry(victim.day, victim.text);
+            await loadEntries(search.trim());
+          } catch {
+            showFlash("Couldn't restore that entry.");
+          }
+        },
+      });
     },
-    [loadEntries]
+    [entries, search, saveEntry, loadEntries, showFlash]
   );
 
   const onExport = useCallback(async () => {
@@ -135,10 +189,10 @@ export default function Home() {
       a.download = "verum-export.json";
       a.click();
       URL.revokeObjectURL(a.href);
-    } catch (e) {
-      alert("Export failed: " + (e as Error).message);
+    } catch {
+      showFlash("Export failed. Try again.");
     }
-  }, []);
+  }, [showFlash]);
 
   const onLogout = useCallback(async () => {
     await api("/logout", { method: "POST" }).catch(() => {});
@@ -156,28 +210,56 @@ export default function Home() {
           { method: "POST", body: JSON.stringify({ delta }) }
         );
         setQuote(data?.quote ?? null);
-      } catch (e) {
-        alert("Vote failed: " + (e as Error).message);
+      } catch {
+        showFlash("Couldn't register that vote.");
       } finally {
         setQuoteBusy(false);
       }
     },
-    [quote, quoteBusy]
+    [quote, quoteBusy, showFlash]
   );
 
   const onDeleteQuote = useCallback(async () => {
     if (!quote) return;
-    if (!confirm("Delete this quote?")) return;
+    const victim = quote;
     setQuoteBusy(true);
     try {
-      await api(`/quotes/${quote.id}`, { method: "DELETE" });
+      await api(`/quotes/${victim.id}`, { method: "DELETE" });
       await refreshQuote();
-    } catch (e) {
-      alert("Delete failed: " + (e as Error).message);
+      showFlash("Quote removed.", {
+        label: "Undo",
+        run: async () => {
+          try {
+            await api("/quotes", {
+              method: "POST",
+              body: JSON.stringify({
+                text: victim.text,
+                author: victim.author,
+              }),
+            });
+            await refreshQuote();
+          } catch {
+            showFlash("Couldn't restore the quote.");
+          }
+        },
+      });
+    } catch {
+      showFlash("Couldn't remove the quote.");
     } finally {
       setQuoteBusy(false);
     }
-  }, [quote, refreshQuote]);
+  }, [quote, refreshQuote, showFlash]);
+
+  // ---- search reveal ----
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+    requestAnimationFrame(() => searchRef.current?.focus());
+  }, []);
+
+  const closeSearch = useCallback(() => {
+    setSearch("");
+    setSearchOpen(false);
+  }, []);
 
   // ---- keyboard shortcuts ----
   useEffect(() => {
@@ -188,94 +270,152 @@ export default function Home() {
       }
       if (e.key === "/" && document.activeElement !== entryRef.current) {
         e.preventDefault();
-        searchRef.current?.focus();
+        openSearch();
       }
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onSaveDraft]);
+  }, [onSaveDraft, openSearch]);
+
+  const showCue = draft.trim() !== "" && draft.trim() !== savedDraft;
+  const filtering = !!search.trim();
 
   return (
     <div className="wrap">
       <header>
         <div className="brand">
           <div className="moon" aria-hidden="true" />
-          <div>
-            <h1>Verum</h1>
-            <div className="sub">daily journal</div>
-          </div>
+          <h1>Verum</h1>
         </div>
-        <div className="topline">
-          <span className="pill">{todayLabel}</span>
-          <button className="ghost iconbtn" onClick={onExport}>
-            <Download size={16} /> Export
+        <div className="utility">
+          <button
+            className="ghost"
+            type="button"
+            onClick={onExport}
+            aria-label="Export entries"
+            title="Export"
+          >
+            <Download size={18} />
           </button>
-          <button className="ghost iconbtn" onClick={onLogout}>
-            <LogOut size={16} /> Change token
+          <button
+            className="ghost"
+            type="button"
+            onClick={onLogout}
+            aria-label="Change token"
+            title="Change token"
+          >
+            <LogOut size={18} />
           </button>
         </div>
       </header>
 
-      <StreakBanner streak={streak} />
-
-      <div id="bar">
-        <input
-          ref={entryRef}
-          autoFocus
-          type="text"
-          placeholder="What happened today?"
-          autoComplete="off"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onSaveDraft();
-            }
-          }}
-        />
-        <button onClick={onSaveDraft}>Save (Enter)</button>
-      </div>
-      <div className="hint">
-        <span>
-          Keys: <b>Enter</b> save · <b>Ctrl/⌘+S</b> save · <b>/</b> search
-        </span>
-        <span className="counter">
-          <span>{draft.length}</span> chars
-        </span>
-      </div>
-
-      {hasLoggedToday && (
-        <QuoteBox
-          quote={quote}
-          loading={quoteLoading}
-          busy={quoteBusy}
-          onVote={onVote}
-          onDelete={onDeleteQuote}
-        />
-      )}
-
-      <input
-        id="search"
-        ref={searchRef}
-        type="search"
-        placeholder="Search previous entries…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-
-      <ul>
-        {entries.map((e) => (
-          <EntryRow
-            key={e.day}
-            entry={e}
-            onSave={saveEntry}
-            onDelete={onDeleteEntry}
+      {/* ===== ZONE 1 — TODAY ===== */}
+      <section className="today" aria-label="Today">
+        <p className="overline today-date">{todayLabel}</p>
+        <div className="capture capture-row">
+          <input
+            ref={entryRef}
+            autoFocus
+            type="text"
+            placeholder="What happened today?"
+            autoComplete="off"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onSaveDraft();
+              }
+            }}
           />
-        ))}
-      </ul>
+          <span className={"capture-cue" + (showCue ? " show" : "")}>
+            ↵ to save
+          </span>
+        </div>
 
+        <StreakBanner streak={streak} />
+
+        {hasLoggedToday && (
+          <QuoteBox
+            quote={quote}
+            loading={quoteLoading}
+            busy={quoteBusy}
+            onVote={onVote}
+            onDelete={onDeleteQuote}
+          />
+        )}
+      </section>
+
+      {/* ===== ZONE 2 — RECORD ===== */}
+      <section className="record" aria-label="Earlier entries">
+        <div className="record-head">
+          <p className="overline">Record</p>
+          <button
+            className="ghost"
+            type="button"
+            onClick={searchOpen ? closeSearch : openSearch}
+            aria-label={searchOpen ? "Close search" : "Search entries"}
+            title="Search (/)"
+          >
+            <Search size={18} />
+          </button>
+        </div>
+
+        {searchOpen && (
+          <input
+            id="search"
+            ref={searchRef}
+            type="search"
+            placeholder="Search previous entries…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                closeSearch();
+              }
+            }}
+          />
+        )}
+
+        {entries.length === 0 ? (
+          <p className="empty">
+            {filtering ? "No matching entries." : "No entries yet."}
+          </p>
+        ) : (
+          <ul>
+            {entries.map((e) => (
+              <EntryRow
+                key={e.day}
+                entry={e}
+                onSave={saveEntry}
+                onDelete={onDeleteEntry}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ===== ZONE 3 — LIFE ===== */}
       <LifeCalendar entries={entries} />
+
+      {flash && (
+        <div className="flash" role="status">
+          <span>{flash.message}</span>
+          {flash.action && (
+            <button
+              type="button"
+              onClick={() => {
+                const run = flash.action!.run;
+                setFlash(null);
+                run();
+              }}
+            >
+              {flash.action.label}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

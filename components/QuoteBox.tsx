@@ -16,18 +16,13 @@ export default function QuoteBox({
   onVote: (delta: 1 | -1) => void;
   onDelete: () => void;
 }) {
-  const disabled = loading || busy || !quote;
+  // Honest emptiness: a reward you can't see beats a reward that points at
+  // an API you can't reach. Show nothing until a quote actually exists.
+  if (!loading && !quote) return null;
 
-  let text = "Loading quote…";
-  let author = "";
-  if (!loading) {
-    if (!quote) {
-      text = "No quotes yet. Add one via the API.";
-    } else {
-      text = `“${quote.text}”`;
-      author = quote.author ? `— ${quote.author}` : "";
-    }
-  }
+  const disabled = loading || busy || !quote;
+  const text = loading ? "Loading quote…" : `“${quote!.text}”`;
+  const author = !loading && quote!.author ? `— ${quote!.author}` : "";
 
   return (
     <section className="quoteBox" aria-label="Daily quote">

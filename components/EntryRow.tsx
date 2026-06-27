@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { Trash2 } from "lucide-react";
 import type { Entry } from "@/lib/types";
 
 export default function EntryRow({
@@ -50,8 +51,14 @@ export default function EntryRow({
         {entry.text}
       </div>
       <div className="actions">
-        <button className="ghost" onClick={() => onDelete(entry.day)}>
-          Delete
+        <button
+          className="ghost"
+          type="button"
+          aria-label={`Delete entry for ${entry.day}`}
+          title="Delete"
+          onClick={() => onDelete(entry.day)}
+        >
+          <Trash2 size={16} />
         </button>
       </div>
     </li>

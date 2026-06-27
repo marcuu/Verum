@@ -1,17 +1,22 @@
 @import "tailwindcss";
 
-/* ===== Verum design — ported from the original index.html ===== */
+/* ===== Verum design =====
+   One spine, three zones (today → record → life), decreasing weight.
+   Hierarchy carried by space and type weight, not boxes and borders.
+   One radius for controls, one accent (violet) used only as the reward colour. */
 :root {
   --ink: #111;
   --ink-2: #444;
-  --muted: #777;
-  --line: #ececec;
+  --muted: #8a8a8a;
+  --line: #ededed;
   --bg: #fff;
   --accent: #0f0f0f;
   --done: #e8e8ef;
   --current: #111;
   --entry: #8b5cf6;
   --w: 12px;
+  --r: 10px; /* the single control radius */
+  --s: 8px; /* spacing unit; layout rhythm is multiples of this */
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     Inter, "Helvetica Neue", Arial, sans-serif;
 }
@@ -20,8 +25,8 @@
   :root {
     --ink: #eaeaea;
     --ink-2: #cfcfcf;
-    --muted: #9a9a9a;
-    --line: #2a2a2a;
+    --muted: #8f8f8f;
+    --line: #232323;
     --bg: #0c0c0c;
     --accent: #eaeaea;
     --done: #1e1e24;
@@ -43,27 +48,26 @@ body {
 }
 
 .wrap {
-  max-width: 860px;
-  margin: 6rem auto 4rem;
-  padding: 0 1rem;
+  max-width: 720px;
+  margin: 7rem auto 6rem;
+  padding: 0 1.25rem;
 }
 
+/* ---- shared overline label for each zone ---- */
+.overline {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* ---- header: brand carries weight, utilities recede ---- */
 header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
-}
-
-h1 {
-  font-size: 1.5rem;
-  margin: 0;
-  letter-spacing: 0.2px;
-}
-
-.sub {
-  color: var(--muted);
-  margin: 0.25rem 0 1rem;
 }
 
 .brand {
@@ -72,101 +76,223 @@ h1 {
   gap: 0.6rem;
 }
 
+h1 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.sub {
+  color: var(--muted);
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
 .moon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--ink);
-  position: relative;
-  box-shadow: inset -8px 0 0 0 var(--bg);
+  box-shadow: inset -7px 0 0 0 var(--bg);
 }
 
-#bar {
+.utility {
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-top: 0.5rem;
+  gap: 0.15rem;
 }
 
+/* ---- controls ---- */
 input[type="text"],
 input[type="search"],
 input[type="password"] {
-  flex: 1;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  font-size: 1rem;
+  width: 100%;
+  padding: 0.55rem 0;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
   background: transparent;
   color: var(--ink);
+  font-size: 1rem;
+}
+
+input::placeholder {
+  color: var(--muted);
+}
+
+input:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
 }
 
 button {
-  padding: 0.9rem 1rem;
+  font: inherit;
+  cursor: pointer;
+  padding: 0.7rem 1.1rem;
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--bg);
-  border-radius: 10px;
-  cursor: pointer;
+  border-radius: var(--r);
 }
 
 button.ghost {
+  padding: 0.45rem;
+  border: none;
   background: transparent;
+  color: var(--muted);
+  border-radius: var(--r);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+button.ghost:hover:not(:disabled) {
   color: var(--ink);
-  border-color: #bdbdbd;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-.hint {
+/* ============ ZONE 1 — TODAY ============ */
+.today {
+  margin-top: calc(var(--s) * 5);
+}
+
+.today-date {
+  margin-bottom: calc(var(--s) * 1.5);
+}
+
+.capture input {
+  font-size: 1.35rem;
+  line-height: 1.4;
+  padding: 0.4rem 0;
+}
+
+.capture-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.capture-cue {
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.capture-cue.show {
+  opacity: 1;
+}
+
+/* streak — a quiet line under capture, not a banner */
+.streak {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: calc(var(--s) * 1.5);
+  font-size: 0.85rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.streak-flame {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.streak-num {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.streak.logged .streak-state {
+  color: var(--entry);
+}
+
+/* quote — the earned reward, lives in the today zone, borderless */
+.quoteBox {
+  margin-top: calc(var(--s) * 3);
+  padding: 0;
+  border: none;
+}
+
+.qText {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+
+.qAuthor {
+  margin-top: 0.4rem;
   color: var(--muted);
   font-size: 0.9rem;
-  margin-top: 0.4rem;
+}
+
+.qActions {
   display: flex;
-  gap: 1rem;
+  gap: 0.1rem;
+  margin-top: calc(var(--s) * 1.25);
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.quoteBox:hover .qActions,
+.quoteBox:focus-within .qActions {
+  opacity: 1;
+}
+
+.qIcon {
+  padding: 0.4rem;
+}
+
+/* ============ ZONE 2 — RECORD ============ */
+.record {
+  margin-top: calc(var(--s) * 7);
+}
+
+.record-head {
+  display: flex;
   align-items: center;
-}
-
-.hint b {
-  color: var(--ink-2);
-}
-
-.counter {
-  margin-left: auto;
+  justify-content: space-between;
+  min-height: 2rem;
 }
 
 #search {
-  width: 100%;
-  margin-top: 0.75rem;
+  margin-top: calc(var(--s) * 1.5);
 }
 
 ul {
   list-style: none;
   padding: 0;
-  margin: 1rem 0 0;
+  margin: calc(var(--s) * 1.5) 0 0;
 }
 
 li {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  padding: 0.85rem 0;
-  border-bottom: 1px solid var(--line);
+  gap: 1.25rem;
+  align-items: baseline;
+  padding: 0.8rem 0;
 }
 
 .day {
-  color: var(--ink-2);
-  min-width: 7.5ch;
-  padding-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  min-width: 6.5ch;
+  font-variant-numeric: tabular-nums;
 }
 
 .text {
   flex: 1;
+  line-height: 1.55;
   outline: none;
   border-radius: 6px;
-  padding: 0.15rem 0.25rem;
+  padding: 0.1rem 0.2rem;
+  margin: -0.1rem -0.2rem;
 }
 
 .text:focus {
@@ -176,80 +302,39 @@ li {
 .actions {
   display: flex;
   gap: 0.4rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.pill {
-  display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+li:hover .actions,
+li:focus-within .actions {
+  opacity: 1;
+}
+
+.empty {
   color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.topline {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.iconbtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-/* Streak strip — single line, no card */
-.streak-strip {
-  display: flex;
-  align-items: baseline;
-  gap: 0.25rem 0.45rem;
-  margin-top: 0.75rem;
   font-size: 0.9rem;
-  color: var(--ink-2);
-  flex-wrap: wrap;
+  padding: 0.8rem 0;
 }
 
-.streak-flame {
-  margin-right: 0.05rem;
-}
-
-.streak-num {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--ink);
-}
-
-.streak-unit {
-  color: var(--muted);
-  font-size: 0.875rem;
-}
-
-.streak-sep {
-  color: var(--muted);
-}
-
-.streak-state {
-  color: var(--muted);
-}
-
-.streak-strip.streak-strip-logged .streak-state {
-  color: var(--entry);
-}
-
-/* Life calendar */
+/* ============ ZONE 3 — LIFE ============ */
 .life {
-  margin-top: 2.5rem;
+  margin-top: calc(var(--s) * 9);
 }
 
 .life h3 {
-  margin: 0.2rem 0 0.6rem;
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .life-stats {
   color: var(--muted);
-  margin: 0.6rem 0 1rem;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 1.25rem;
 }
 
 .year-line {
@@ -306,107 +391,60 @@ li {
   transform: translate(-50%, -50%);
 }
 
-.cell.double::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 0;
-  right: 0;
-  top: 0;
-  border-top: 6px solid var(--entry);
-  border-left: 6px solid transparent;
-  opacity: 0.55;
-}
-
-.life-legend {
+/* ---- inline feedback: one quiet toast, replaces alert()/confirm() ---- */
+.flash {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
   display: flex;
-  gap: 1rem;
   align-items: center;
-  margin-top: 0.6rem;
-  color: var(--muted);
+  gap: 0.9rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 0.95rem;
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: var(--r);
   font-size: 0.9rem;
-  flex-wrap: wrap;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  z-index: 50;
 }
 
-.legend {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.legend::before {
-  content: "";
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid var(--line);
+.flash button {
+  padding: 0;
+  border: none;
   background: transparent;
+  color: var(--bg);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.85;
 }
 
-.legend.done::before {
-  background: var(--done);
+.flash button:hover {
+  opacity: 1;
 }
 
-.legend.current::before {
-  background: transparent;
-  box-shadow: inset 0 0 0 2px var(--current);
-}
-
-.legend.entry::before {
-  background: var(--entry);
-  border-color: var(--entry);
-}
-
-.legend.double::before {
-  background: linear-gradient(45deg, var(--entry) 0 49%, transparent 51% 100%);
-  border-color: var(--entry);
-  opacity: 0.55;
-}
-
-/* Quotes */
-.quoteBox {
-  margin: 1.25rem 0 0;
-  padding: 1rem;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-}
-
-.qText {
-  font-size: 1.15rem;
-  line-height: 1.35;
-  white-space: pre-wrap;
-}
-
-.qAuthor {
-  margin-top: 0.35rem;
-  color: var(--muted);
-}
-
-.qActions {
-  display: flex;
-  gap: 0.4rem;
-  margin-top: 0.75rem;
-}
-
-.qIcon {
-  padding: 0.55rem 0.7rem;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-}
-
-/* Login */
+/* ---- login ---- */
 .login {
   max-width: 360px;
   margin: 18vh auto 0;
-  padding: 0 1rem;
+  padding: 0 1.25rem;
 }
 
 .login-form {
   display: flex;
-  gap: 0.5rem;
+  align-items: flex-end;
+  gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+.login-form input {
+  flex: 1;
+}
+
+.login-form button {
+  white-space: nowrap;
 }
 
 .login-error {

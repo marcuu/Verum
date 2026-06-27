@@ -136,9 +136,9 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
 
   return (
     <section className="life" aria-labelledby="lifeTitle">
-      <h3 id="lifeTitle">Life calendar</h3>
+      <h3 id="lifeTitle">Life</h3>
       <div className="life-stats">
-        {elapsed}/{total} weeks ({pct}%)
+        {elapsed} of {total} weeks lived · {pct}%
       </div>
       <div>
         {rows.map(({ age, bins }) => (
@@ -149,7 +149,6 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
             {bins.map((b, x) => {
               const cls = [
                 "cell",
-                b.weeks.length > 1 ? "double" : "",
                 b.hasPast ? "done" : "",
                 b.isCurrent ? "current" : "",
               ]
@@ -159,11 +158,7 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
                 b.weekStart && b.weekEnd
                   ? `${b.weekStart.toISOString().slice(0, 10)} → ${b.weekEnd
                       .toISOString()
-                      .slice(0, 10)} (Age ${age})${
-                      b.weeks.length > 1
-                        ? ` (compressed ${b.weeks.length} weeks)`
-                        : ""
-                    }`
+                      .slice(0, 10)} (Age ${age})`
                   : `Age ${age}`;
               return (
                 <div className={cls} key={x} title={title}>
@@ -173,12 +168,6 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
             })}
           </div>
         ))}
-      </div>
-      <div className="life-legend">
-        <span className="legend done">Past</span>
-        <span className="legend current">This week</span>
-        <span className="legend entry">Has entry</span>
-        <span className="legend double">Compressed extra week</span>
       </div>
     </section>
   );
