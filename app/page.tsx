@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, LogOut } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
-import type { Entry, Quote, Streak } from "@/lib/types";
+import { computeStreak } from "@/lib/streak";
+import type { StreakInfo } from "@/lib/streak";
+import type { Entry, Quote } from "@/lib/types";
 import QuoteBox from "@/components/QuoteBox";
 import EntryRow from "@/components/EntryRow";
 import LifeCalendar from "@/components/LifeCalendar";
@@ -14,31 +16,33 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
   const [todayLabel, setTodayLabel] = useState("");
-  const [streak, setStreak] = useState<Streak | null>(null);
+  const [streak, setStreak] = useState<StreakInfo | null>(null);
+  const [hasLoggedToday, setHasLoggedToday] = useState(false);
 
   const [quote, setQuote] = useState<Quote | null>(null);
-  const [quoteLoading, setQuoteLoading] = useState(true);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const entryRef = useRef<HTMLInputElement>(null);
 
   // ---- data ----
+  // Returns today's entry if found (only on unfiltered fetches).
   const loadEntries = useCallback(async (q: string) => {
     const data = await api<Entry[]>(
       "/entries" + (q ? `?q=${encodeURIComponent(q)}` : "")
     );
     setEntries(data);
-    const today = data.find((e) => e.day === todayISOUTC());
-    if (today) setDraft(today.text);
-  }, []);
-
-  const refreshStreak = useCallback(async () => {
-    try {
-      setStreak(await api<Streak>("/streak"));
-    } catch {
-      setStreak(null);
+    if (!q) {
+      const today = todayISOUTC();
+      const todayEntry = data.find((e) => e.day === today);
+      if (todayEntry) setDraft(todayEntry.text);
+      const info = computeStreak(data.map((e) => e.day), today);
+      setStreak(info);
+      setHasLoggedToday(info.loggedToday);
+      return todayEntry ?? null;
     }
+    return null;
   }, []);
 
   const refreshQuote = useCallback(async () => {
@@ -53,7 +57,7 @@ export default function Home() {
     }
   }, []);
 
-  // initial load
+  // initial load — quote only fires if today's entry already exists
   useEffect(() => {
     const d = new Date();
     setTodayLabel(
@@ -63,12 +67,14 @@ export default function Home() {
         month: "short",
       })
     );
-    loadEntries("").catch((e) =>
-      alert("Error loading entries.\n\n" + (e as Error).message)
-    );
-    refreshStreak();
-    refreshQuote();
-  }, [loadEntries, refreshStreak, refreshQuote]);
+    loadEntries("")
+      .then((todayEntry) => {
+        if (todayEntry) refreshQuote();
+      })
+      .catch((e) =>
+        alert("Error loading entries.\n\n" + (e as Error).message)
+      );
+  }, [loadEntries, refreshQuote]);
 
   // debounced search
   useEffect(() => {
@@ -94,28 +100,28 @@ export default function Home() {
     if (!text) return;
     try {
       await saveEntry(todayISOUTC(), text);
-      await loadEntries(search.trim());
-      refreshStreak();
+      // Always reload full list so streak + hasLoggedToday are recomputed correctly.
+      await loadEntries("");
+      setHasLoggedToday(true);
       refreshQuote();
       entryRef.current?.focus();
       entryRef.current?.select();
     } catch (e) {
       alert("Save failed: " + (e as Error).message);
     }
-  }, [draft, saveEntry, loadEntries, search, refreshStreak, refreshQuote]);
+  }, [draft, saveEntry, loadEntries, refreshQuote]);
 
   const onDeleteEntry = useCallback(
     async (day: string) => {
       if (!confirm(`Delete ${day}?`)) return;
       try {
         await api(`/entries/${day}`, { method: "DELETE" });
-        await loadEntries(search.trim());
-        refreshStreak();
+        await loadEntries("");
       } catch (e) {
         alert("Delete failed: " + (e as Error).message);
       }
     },
-    [loadEntries, search, refreshStreak]
+    [loadEntries]
   );
 
   const onExport = useCallback(async () => {
@@ -210,19 +216,12 @@ export default function Home() {
         </div>
       </header>
 
-      <QuoteBox
-        quote={quote}
-        loading={quoteLoading}
-        busy={quoteBusy}
-        onVote={onVote}
-        onDelete={onDeleteQuote}
-      />
-
       <StreakBanner streak={streak} />
 
       <div id="bar">
         <input
           ref={entryRef}
+          autoFocus
           type="text"
           placeholder="What happened today?"
           autoComplete="off"
@@ -245,6 +244,16 @@ export default function Home() {
           <span>{draft.length}</span> chars
         </span>
       </div>
+
+      {hasLoggedToday && (
+        <QuoteBox
+          quote={quote}
+          loading={quoteLoading}
+          busy={quoteBusy}
+          onVote={onVote}
+          onDelete={onDeleteQuote}
+        />
+      )}
 
       <input
         id="search"
