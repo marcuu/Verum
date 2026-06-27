@@ -6,7 +6,18 @@ import { AUTH_COOKIE } from "@/lib/auth";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // PWA assets must stay reachable without auth so the manifest, service worker
+  // and icons load on the login page and from the OS install prompt.
+  const isPublicAsset =
+    pathname === "/sw.js" ||
+    pathname === "/manifest.webmanifest" ||
+    pathname === "/manifest.json" ||
+    pathname === "/favicon.ico" ||
+    pathname === "/apple-touch-icon.png" ||
+    pathname.startsWith("/icon-");
+
   const isPublic =
+    isPublicAsset ||
     pathname === "/login" ||
     pathname.startsWith("/api/login") ||
     pathname.startsWith("/api/logout");
