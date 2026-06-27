@@ -1,11 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
-import type { Entry } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+import { api } from "@/lib/client";
+import type { Entry, LifeMarker } from "@/lib/types";
 
 // Hardcoded life settings (overridable via NEXT_PUBLIC_* env).
 const DOB_FIXED = process.env.NEXT_PUBLIC_DOB ?? "1993-12-19";
 const EXP_FIXED = parseInt(process.env.NEXT_PUBLIC_LIFE_YEARS ?? "108", 10);
+const MAX_MARKERS = 12;
+
+type LifeMarkerMap = Record<string, LifeMarker>;
+
+const MARKER_ACCENTS = [
+  { name: "amber", value: "#d89b48" },
+  { name: "rose", value: "#c96a74" },
+  { name: "sage", value: "#87a96b" },
+  { name: "blue", value: "#6f9ecf" },
+] as const;
 
 // ---- UTC date helpers ----
 function parseISODateUTC(s: string): Date {
@@ -36,6 +48,7 @@ type Bin = {
   isCurrent: boolean;
   hasEntry: boolean;
   weeks: number[];
+  absoluteWeeks: number[];
   weekStart: Date | null;
   weekEnd: Date | null;
 };
@@ -96,6 +109,7 @@ function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number 
       isCurrent: false,
       hasEntry: false,
       weeks: [],
+      absoluteWeeks: [],
       weekStart: null,
       weekEnd: null,
     }));
@@ -106,6 +120,7 @@ function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number 
       const mEnd = addDaysUTC(mStart, 6);
       const b = bins[binX];
       b.weeks.push(i);
+      b.absoluteWeeks.push(globalWeekIdx + i);
       if (!b.weekStart || mStart < b.weekStart) b.weekStart = mStart;
       if (!b.weekEnd || mEnd > b.weekEnd) b.weekEnd = mEnd;
     }
@@ -130,16 +145,155 @@ function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number 
   return { rows, elapsed, total };
 }
 
+function markerCount(markers: LifeMarkerMap): number {
+  return Object.keys(markers).length;
+}
+
+function mapMarkers(markers: LifeMarker[]): LifeMarkerMap {
+  return Object.fromEntries(
+    markers.map((marker) => [String(marker.week_index), marker])
+  );
+}
+
+function formatUTCDate(d: Date | null): string {
+  return d ? d.toISOString().slice(0, 10) : "";
+}
+
 export default function LifeCalendar({ entries }: { entries: Entry[] }) {
   const { rows, elapsed, total } = useMemo(() => build(entries), [entries]);
+  const [markers, setMarkers] = useState<LifeMarkerMap>({});
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [draftLabel, setDraftLabel] = useState("");
+  const [draftAccent, setDraftAccent] = useState<string>(MARKER_ACCENTS[0].value);
+  const [markerError, setMarkerError] = useState("");
   const pct = total ? ((elapsed / total) * 100).toFixed(1) : "0.0";
+  const selectedMarker =
+    selectedWeek === null ? null : markers[String(selectedWeek)] ?? null;
+  const selectedBin =
+    selectedWeek === null
+      ? null
+      : rows
+          .flatMap((row) => row.bins)
+          .find((bin) => bin.absoluteWeeks.includes(selectedWeek)) ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api<LifeMarker[]>("/life-markers")
+      .then((data) => {
+        if (!cancelled) setMarkers(mapMarkers(data));
+      })
+      .catch(() => {
+        if (!cancelled) setMarkerError("Couldn't load life markers.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedWeek === null) return;
+    const marker = markers[String(selectedWeek)];
+    setDraftLabel(marker?.label ?? "");
+    setDraftAccent(marker?.accent ?? MARKER_ACCENTS[0].value);
+  }, [markers, selectedWeek]);
+
+  async function saveMarker() {
+    if (selectedWeek === null) return;
+    const label = draftLabel.trim();
+    if (!label) return;
+    const key = String(selectedWeek);
+    if (!markers[key] && markerCount(markers) >= MAX_MARKERS) {
+      setMarkerError(`Life markers are capped at ${MAX_MARKERS}.`);
+      return;
+    }
+
+    setMarkerError("");
+    try {
+      const data = await api<{ marker: LifeMarker }>("/life-markers", {
+        method: "POST",
+        body: JSON.stringify({
+          week_index: selectedWeek,
+          label,
+          accent: draftAccent,
+        }),
+      });
+      setMarkers((prev) => ({
+        ...prev,
+        [key]: data.marker,
+      }));
+    } catch {
+      setMarkerError("Couldn't save that marker.");
+    }
+  }
+
+  async function removeMarker() {
+    if (selectedWeek === null) return;
+    const key = String(selectedWeek);
+
+    setMarkerError("");
+    try {
+      await api(`/life-markers/${selectedWeek}`, { method: "DELETE" });
+      setMarkers((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } catch {
+      setMarkerError("Couldn't remove that marker.");
+    }
+  }
 
   return (
     <section className="life" aria-labelledby="lifeTitle">
       <h3 id="lifeTitle">Life</h3>
       <div className="life-stats">
-        {elapsed} of {total} weeks lived · {pct}%
+        {elapsed} of {total} weeks lived · {pct}% · {markerCount(markers)}/{MAX_MARKERS} markers
       </div>
+      {selectedWeek !== null && selectedBin && (
+        <div className="marker-editor" aria-label="Life marker editor">
+          <div className="marker-editor-copy">
+            <strong>Week {selectedWeek + 1}</strong> · {formatUTCDate(selectedBin.weekStart)} → {formatUTCDate(selectedBin.weekEnd)}
+          </div>
+          <input
+            type="text"
+            maxLength={40}
+            placeholder="Small life marker…"
+            value={draftLabel}
+            onChange={(e) => setDraftLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void saveMarker();
+              if (e.key === "Escape") setSelectedWeek(null);
+            }}
+          />
+          <div className="marker-actions">
+            {MARKER_ACCENTS.map((accent) => (
+              <button
+                aria-label={`${accent.name} marker`}
+                className={draftAccent === accent.value ? "selected" : ""}
+                key={accent.value}
+                onClick={() => setDraftAccent(accent.value)}
+                style={{ "--marker-accent": accent.value } as CSSProperties}
+                type="button"
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => void saveMarker()}
+              disabled={!draftLabel.trim()}
+            >
+              Pin
+            </button>
+            {selectedMarker && (
+              <button type="button" onClick={() => void removeMarker()}>
+                Remove
+              </button>
+            )}
+          </div>
+          {markerError && <div className="marker-error">{markerError}</div>}
+        </div>
+      )}
       <div>
         {rows.map(({ age, bins }) => (
           <div className="year-line" key={age}>
@@ -147,23 +301,33 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
               {age % 10 === 0 ? `Age ${age}` : ""}
             </div>
             {bins.map((b, x) => {
+              const markerWeek = b.absoluteWeeks.find((week) => markers[String(week)]);
+              const marker = markerWeek === undefined ? null : markers[String(markerWeek)];
               const cls = [
                 "cell",
                 b.hasPast ? "done" : "",
                 b.isCurrent ? "current" : "",
+                marker ? "marker" : "",
               ]
                 .filter(Boolean)
                 .join(" ");
-              const title =
+              const dateTitle =
                 b.weekStart && b.weekEnd
-                  ? `${b.weekStart.toISOString().slice(0, 10)} → ${b.weekEnd
-                      .toISOString()
-                      .slice(0, 10)} (Age ${age})`
+                  ? `${formatUTCDate(b.weekStart)} → ${formatUTCDate(b.weekEnd)} (Age ${age})`
                   : `Age ${age}`;
+              const title = marker ? `${dateTitle} · Marker: ${marker.label}` : dateTitle;
               return (
-                <div className={cls} key={x} title={title}>
-                  {b.hasEntry && <div className="dot" />}
-                </div>
+                <button
+                  aria-label={marker ? `Edit marker: ${marker.label}` : `Add marker for ${dateTitle}`}
+                  className={cls}
+                  key={x}
+                  onClick={() => setSelectedWeek(markerWeek ?? b.absoluteWeeks[0] ?? null)}
+                  style={marker ? ({ "--marker-accent": marker.accent } as CSSProperties) : undefined}
+                  title={title}
+                  type="button"
+                >
+                  {b.hasEntry && <span className="dot" />}
+                </button>
               );
             })}
           </div>
