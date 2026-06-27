@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut, Search, Quote as QuoteIcon, List, Grid3x3 } from "lucide-react";
+import { Download, LogOut, Search, Quote as QuoteIcon, List, Grid3x3, Bell } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
@@ -16,7 +16,7 @@ import NotificationSettings from "@/components/NotificationSettings";
 type FlashAction = { label: string; run: () => void | Promise<void> };
 type FlashState = { message: string; action?: FlashAction };
 
-type Tab = "quote" | "record" | "life";
+type Tab = "quote" | "record" | "life" | "reminders";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("quote");
@@ -461,7 +461,9 @@ export default function Home() {
       </section>
 
       {/* ===== REMINDERS ===== */}
-      <NotificationSettings />
+      <div hidden={tab !== "reminders"}>
+        <NotificationSettings />
+      </div>
 
       {/* ===== ZONE 3 — LIFE ===== */}
       <div hidden={tab !== "life"}>
@@ -487,6 +489,15 @@ export default function Home() {
         >
           <List size={20} />
           <span>Record</span>
+        </button>
+        <button
+          type="button"
+          className={"nav-tab" + (tab === "reminders" ? " active" : "")}
+          aria-current={tab === "reminders" ? "page" : undefined}
+          onClick={() => setTab("reminders")}
+        >
+          <Bell size={20} />
+          <span>Reminders</span>
         </button>
         <button
           type="button"
