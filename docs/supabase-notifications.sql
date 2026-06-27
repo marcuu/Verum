@@ -69,3 +69,10 @@ where logical_day is not null;
 create unique index if not exists verum_notification_one_weekly_delivery
 on verum_notification_deliveries(subscription_id, notification_type, logical_week)
 where logical_week is not null;
+
+-- Match the other verum_* tables: RLS enabled with no policies, so the anon key
+-- cannot read or write. All access is via the service-role key (server-only),
+-- which bypasses RLS.
+alter table verum_notification_preferences enable row level security;
+alter table verum_notification_subscriptions enable row level security;
+alter table verum_notification_deliveries enable row level security;
