@@ -167,6 +167,8 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
   const [draftAccent, setDraftAccent] = useState<string>(MARKER_ACCENTS[0].value);
   const [markerError, setMarkerError] = useState("");
   const pct = total ? ((elapsed / total) * 100).toFixed(1) : "0.0";
+  const remaining = Math.max(0, total - elapsed);
+  const yearsLeft = Math.round(remaining / 52);
   const selectedMarker =
     selectedWeek === null ? null : markers[String(selectedWeek)] ?? null;
   const selectedBin =
@@ -248,6 +250,29 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
   return (
     <section className="life" aria-labelledby="lifeTitle">
       <h3 id="lifeTitle">Life</h3>
+      <style>{`
+        @keyframes life-breathe {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        .life .cell.current {
+          animation: life-breathe 4s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .life .cell.current { animation: none; }
+        }
+        .life-remaining {
+          color: var(--muted);
+          font-size: 0.85rem;
+          margin: 0 0 0.35rem;
+        }
+      `}</style>
+      <div
+        className="life-remaining"
+        title={`${remaining.toLocaleString()} weeks · ≈ ${yearsLeft} years remaining`}
+      >
+        ≈ {remaining.toLocaleString()} weeks left.
+      </div>
       <div className="life-stats">
         {elapsed} of {total} weeks lived · {pct}% · {markerCount(markers)}/{MAX_MARKERS} markers
       </div>
