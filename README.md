@@ -24,6 +24,8 @@ app/
     entries/               GET list/search, POST upsert
     entries/[day]/         GET one, DELETE
     entries/export/        GET all as JSON
+    life-markers/          GET list, POST upsert
+    life-markers/[week]/   DELETE
     quotes/                GET list, POST create
     quotes/daily/          GET today's pick (atomic SQL RPC)
     quotes/[id]/           DELETE
@@ -35,15 +37,16 @@ middleware.ts              Redirects unauthenticated page requests to /login
 
 ### Database
 
-Three tables in the Supabase `public` schema, namespaced with a `verum_` prefix
+Four tables in the Supabase `public` schema, namespaced with a `verum_` prefix
 (co-located with another app in the same project):
 
 - `verum_entries` — `id, day (unique), text, created_at, updated_at`
+- `verum_life_markers` — `id, week_index (unique), label, accent, created_at, updated_at`
 - `verum_quotes` — `id, text, author, score, last_seen_at, created_at, updated_at` (unique on `text, author`)
 - `verum_quotes_daily_pick` — `day (pk), quote_id (fk), picked_at`
 
 Plus the `verum_pick_daily_quote(day, core_threshold, avoid_days)` SQL function
-that selects and records the day's quote atomically.
+that selects and records the day's quote atomically. For existing projects, run `docs/supabase-life-markers.sql` once to add the life-marker table.
 
 RLS is enabled with **no policies**, so the anon/publishable key cannot read or
 write. All access is via the service-role key from the server-side API routes,

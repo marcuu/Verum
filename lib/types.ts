@@ -23,3 +23,12 @@ export type Quote = {
   updated_at?: string;
   is_core?: boolean;
 };
+
+
+export type LifeMarker = {
+  week_index: number;
+  label: string;
+  accent: string;
+  created_at?: string;
+  updated_at?: string;
+};

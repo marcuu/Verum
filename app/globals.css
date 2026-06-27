@@ -530,6 +530,9 @@ li:focus-within .actions {
 .marker-editor {
   display: grid;
   grid-template-columns: minmax(9rem, 1fr) minmax(10rem, 1.4fr) auto;
+  grid-template-areas:
+    "copy input actions"
+    ". error error";
   align-items: center;
   gap: 0.65rem;
   margin: -0.35rem 0 1rem var(--label);
@@ -540,6 +543,7 @@ li:focus-within .actions {
 }
 
 .marker-editor-copy {
+  grid-area: copy;
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.35;
@@ -551,6 +555,7 @@ li:focus-within .actions {
 }
 
 .marker-editor input {
+  grid-area: input;
   width: 100%;
   min-width: 0;
   padding: 0.5rem 0.65rem;
@@ -563,6 +568,7 @@ li:focus-within .actions {
 }
 
 .marker-actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -617,9 +623,20 @@ li:focus-within .actions {
   background: var(--paper);
 }
 
+.marker-error {
+  grid-area: error;
+  color: #e11d48;
+  font-size: 0.78rem;
+}
+
 @media (max-width: 760px) {
   .marker-editor {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "copy"
+      "input"
+      "actions"
+      "error";
     margin-left: var(--label);
   }
 

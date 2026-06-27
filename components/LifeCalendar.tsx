@@ -2,16 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import type { Entry } from "@/lib/types";
+import { api } from "@/lib/client";
+import type { Entry, LifeMarker } from "@/lib/types";
 
 // Hardcoded life settings (overridable via NEXT_PUBLIC_* env).
 const DOB_FIXED = process.env.NEXT_PUBLIC_DOB ?? "1993-12-19";
 const EXP_FIXED = parseInt(process.env.NEXT_PUBLIC_LIFE_YEARS ?? "108", 10);
-const MARKERS_STORAGE_KEY = "verum.lifeMarkers.v1";
 const MAX_MARKERS = 12;
 
-type LifeMarker = { label: string; accent: string };
-type LifeMarkers = Record<string, LifeMarker>;
+type LifeMarkerMap = Record<string, LifeMarker>;
 
 const MARKER_ACCENTS = [
   { name: "amber", value: "#d89b48" },
@@ -146,19 +145,14 @@ function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number 
   return { rows, elapsed, total };
 }
 
-function markerCount(markers: LifeMarkers): number {
+function markerCount(markers: LifeMarkerMap): number {
   return Object.keys(markers).length;
 }
 
-function readStoredMarkers(): LifeMarkers {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(MARKERS_STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as LifeMarkers) : {};
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
+function mapMarkers(markers: LifeMarker[]): LifeMarkerMap {
+  return Object.fromEntries(
+    markers.map((marker) => [String(marker.week_index), marker])
+  );
 }
 
 function formatUTCDate(d: Date | null): string {
@@ -167,10 +161,11 @@ function formatUTCDate(d: Date | null): string {
 
 export default function LifeCalendar({ entries }: { entries: Entry[] }) {
   const { rows, elapsed, total } = useMemo(() => build(entries), [entries]);
-  const [markers, setMarkers] = useState<LifeMarkers>({});
+  const [markers, setMarkers] = useState<LifeMarkerMap>({});
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [draftLabel, setDraftLabel] = useState("");
   const [draftAccent, setDraftAccent] = useState<string>(MARKER_ACCENTS[0].value);
+  const [markerError, setMarkerError] = useState("");
   const pct = total ? ((elapsed / total) * 100).toFixed(1) : "0.0";
   const selectedMarker =
     selectedWeek === null ? null : markers[String(selectedWeek)] ?? null;
@@ -182,7 +177,19 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
           .find((bin) => bin.absoluteWeeks.includes(selectedWeek)) ?? null;
 
   useEffect(() => {
-    setMarkers(readStoredMarkers());
+    let cancelled = false;
+
+    api<LifeMarker[]>("/life-markers")
+      .then((data) => {
+        if (!cancelled) setMarkers(mapMarkers(data));
+      })
+      .catch(() => {
+        if (!cancelled) setMarkerError("Couldn't load life markers.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -192,28 +199,50 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
     setDraftAccent(marker?.accent ?? MARKER_ACCENTS[0].value);
   }, [markers, selectedWeek]);
 
-  function persistMarkers(next: LifeMarkers) {
-    setMarkers(next);
-    window.localStorage.setItem(MARKERS_STORAGE_KEY, JSON.stringify(next));
-  }
-
-  function saveMarker() {
+  async function saveMarker() {
     if (selectedWeek === null) return;
     const label = draftLabel.trim();
     if (!label) return;
     const key = String(selectedWeek);
-    if (!markers[key] && markerCount(markers) >= MAX_MARKERS) return;
-    persistMarkers({
-      ...markers,
-      [key]: { label: label.slice(0, 40), accent: draftAccent },
-    });
+    if (!markers[key] && markerCount(markers) >= MAX_MARKERS) {
+      setMarkerError(`Life markers are capped at ${MAX_MARKERS}.`);
+      return;
+    }
+
+    setMarkerError("");
+    try {
+      const data = await api<{ marker: LifeMarker }>("/life-markers", {
+        method: "POST",
+        body: JSON.stringify({
+          week_index: selectedWeek,
+          label,
+          accent: draftAccent,
+        }),
+      });
+      setMarkers((prev) => ({
+        ...prev,
+        [key]: data.marker,
+      }));
+    } catch {
+      setMarkerError("Couldn't save that marker.");
+    }
   }
 
-  function removeMarker() {
+  async function removeMarker() {
     if (selectedWeek === null) return;
-    const next = { ...markers };
-    delete next[String(selectedWeek)];
-    persistMarkers(next);
+    const key = String(selectedWeek);
+
+    setMarkerError("");
+    try {
+      await api(`/life-markers/${selectedWeek}`, { method: "DELETE" });
+      setMarkers((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } catch {
+      setMarkerError("Couldn't remove that marker.");
+    }
   }
 
   return (
@@ -234,7 +263,7 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
             value={draftLabel}
             onChange={(e) => setDraftLabel(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") saveMarker();
+              if (e.key === "Enter") void saveMarker();
               if (e.key === "Escape") setSelectedWeek(null);
             }}
           />
@@ -249,15 +278,20 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
                 type="button"
               />
             ))}
-            <button type="button" onClick={saveMarker} disabled={!draftLabel.trim()}>
+            <button
+              type="button"
+              onClick={() => void saveMarker()}
+              disabled={!draftLabel.trim()}
+            >
               Pin
             </button>
             {selectedMarker && (
-              <button type="button" onClick={removeMarker}>
+              <button type="button" onClick={() => void removeMarker()}>
                 Remove
               </button>
             )}
           </div>
+          {markerError && <div className="marker-error">{markerError}</div>}
         </div>
       )}
       <div>

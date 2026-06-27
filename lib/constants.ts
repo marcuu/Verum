@@ -11,5 +11,6 @@ export const AVOID_DAYS = parseInt(process.env.QUOTES_AVOID_DAYS ?? "14", 10);
 export const T_ENTRIES = "verum_entries";
 export const T_QUOTES = "verum_quotes";
 export const T_DAILY_PICK = "verum_quotes_daily_pick";
+export const T_LIFE_MARKERS = "verum_life_markers";
 
 export const isCore = (score: number) => score >= CORE_THRESHOLD;
