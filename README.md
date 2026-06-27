@@ -9,7 +9,7 @@ Personal daily journal + curated quotes, with a "life calendar" visualisation.
 
 ## Features
 
-- **Journal** — one quick-capture entry per day (≤280 chars), inline editing, full-text search, JSON export.
+- **Journal** — one quick-capture entry per day, inline editing, full-text search, JSON export.
 - **Quotes** — a daily pick with thumbs up/down voting; quotes crossing the score threshold become "core".
 - **Life calendar** — 52 weeks per age-year, marking past weeks, the current week, and weeks that have an entry.
 

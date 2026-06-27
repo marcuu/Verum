@@ -8,8 +8,6 @@ import QuoteBox from "@/components/QuoteBox";
 import EntryRow from "@/components/EntryRow";
 import LifeCalendar from "@/components/LifeCalendar";
 
-const MAX = 280;
-
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState("");
@@ -213,7 +211,6 @@ export default function Home() {
           type="text"
           placeholder="What happened today?"
           autoComplete="off"
-          maxLength={MAX}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -230,7 +227,7 @@ export default function Home() {
           Keys: <b>Enter</b> save · <b>Ctrl/⌘+S</b> save · <b>/</b> search
         </span>
         <span className="counter">
-          <span>{draft.length}</span>/{MAX}
+          <span>{draft.length}</span> chars
         </span>
       </div>
 
