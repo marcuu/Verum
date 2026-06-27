@@ -55,7 +55,7 @@ export async function runWeeklyReflection({
       payload: {
         title: "Verum",
         body,
-        url: "/?tab=record",
+        url: "/?tab=journal",
         tag: `verum-weekly-${weekKey}`,
         type: "weekly_reflection",
       },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut, Search, Quote as QuoteIcon, List, Grid3x3, Bell } from "lucide-react";
+import { Download, LogOut, Search, CalendarDays, List, Grid3x3, Bell } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
@@ -16,10 +16,10 @@ import NotificationSettings from "@/components/NotificationSettings";
 type FlashAction = { label: string; run: () => void | Promise<void> };
 type FlashState = { message: string; action?: FlashAction };
 
-type Tab = "quote" | "record" | "life" | "reminders";
+type Tab = "today" | "journal" | "life" | "reminders";
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>("quote");
+  const [tab, setTab] = useState<Tab>("today");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -219,13 +219,18 @@ export default function Home() {
     const wantTab = params.get("tab");
     const wantExport = params.get("export") === "1";
 
-    if (
-      wantTab === "quote" ||
-      wantTab === "record" ||
-      wantTab === "life" ||
-      wantTab === "reminders"
-    ) {
-      setTab(wantTab);
+    // Accept both current names and legacy names for backward compat with
+    // notifications that may still use the old tab identifiers.
+    const tabMap: Record<string, Tab> = {
+      today: "today",
+      quote: "today",   // legacy
+      journal: "journal",
+      record: "journal", // legacy
+      life: "life",
+      reminders: "reminders",
+    };
+    if (wantTab && wantTab in tabMap) {
+      setTab(tabMap[wantTab]);
     }
 
     if (wantExport) {
@@ -300,7 +305,7 @@ export default function Home() {
 
   // ---- search reveal ----
   const openSearch = useCallback(() => {
-    setTab("record");
+    setTab("journal");
     setSearchOpen(true);
     requestAnimationFrame(() => searchRef.current?.focus());
   }, []);
@@ -377,7 +382,7 @@ export default function Home() {
       <section
         className="today"
         aria-label="Today"
-        hidden={tab !== "quote"}
+        hidden={tab !== "today"}
       >
         <p className="overline today-date">{todayLabel}</p>
         <div className="capture capture-row">
@@ -416,14 +421,14 @@ export default function Home() {
         )}
       </section>
 
-      {/* ===== ZONE 2 — RECORD ===== */}
+      {/* ===== ZONE 2 — JOURNAL ===== */}
       <section
         className="record"
-        aria-label="Earlier entries"
-        hidden={tab !== "record"}
+        aria-label="Journal"
+        hidden={tab !== "journal"}
       >
         <div className="record-head">
-          <p className="overline">Record</p>
+          <p className="overline">Journal</p>
           <button
             className="ghost"
             type="button"
@@ -491,12 +496,12 @@ export default function Home() {
       </section>
 
       {/* ===== REMINDERS ===== */}
-      <div hidden={tab !== "reminders"}>
+      <div hidden={tab !== "reminders"} aria-label="Reminders">
         <NotificationSettings />
       </div>
 
       {/* ===== ZONE 3 — LIFE ===== */}
-      <div hidden={tab !== "life"}>
+      <div hidden={tab !== "life"} aria-label="Life">
         <LifeCalendar entries={entries} />
       </div>
 
@@ -504,21 +509,21 @@ export default function Home() {
       <nav className="bottom-nav" aria-label="Sections">
         <button
           type="button"
-          className={"nav-tab" + (tab === "quote" ? " active" : "")}
-          aria-current={tab === "quote" ? "page" : undefined}
-          onClick={() => setTab("quote")}
+          className={"nav-tab" + (tab === "today" ? " active" : "")}
+          aria-current={tab === "today" ? "page" : undefined}
+          onClick={() => setTab("today")}
         >
-          <QuoteIcon size={20} />
-          <span>Quote</span>
+          <CalendarDays size={20} />
+          <span>Today</span>
         </button>
         <button
           type="button"
-          className={"nav-tab" + (tab === "record" ? " active" : "")}
-          aria-current={tab === "record" ? "page" : undefined}
-          onClick={() => setTab("record")}
+          className={"nav-tab" + (tab === "journal" ? " active" : "")}
+          aria-current={tab === "journal" ? "page" : undefined}
+          onClick={() => setTab("journal")}
         >
           <List size={20} />
-          <span>Record</span>
+          <span>Journal</span>
         </button>
         <button
           type="button"
