@@ -3,16 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, LogOut } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
-import type { Entry, Quote } from "@/lib/types";
+import type { Entry, Quote, Streak } from "@/lib/types";
 import QuoteBox from "@/components/QuoteBox";
 import EntryRow from "@/components/EntryRow";
 import LifeCalendar from "@/components/LifeCalendar";
+import StreakBanner from "@/components/StreakBanner";
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
   const [todayLabel, setTodayLabel] = useState("");
+  const [streak, setStreak] = useState<Streak | null>(null);
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(true);
@@ -29,6 +31,14 @@ export default function Home() {
     setEntries(data);
     const today = data.find((e) => e.day === todayISOUTC());
     if (today) setDraft(today.text);
+  }, []);
+
+  const refreshStreak = useCallback(async () => {
+    try {
+      setStreak(await api<Streak>("/streak"));
+    } catch {
+      setStreak(null);
+    }
   }, []);
 
   const refreshQuote = useCallback(async () => {
@@ -56,8 +66,9 @@ export default function Home() {
     loadEntries("").catch((e) =>
       alert("Error loading entries.\n\n" + (e as Error).message)
     );
+    refreshStreak();
     refreshQuote();
-  }, [loadEntries, refreshQuote]);
+  }, [loadEntries, refreshStreak, refreshQuote]);
 
   // debounced search
   useEffect(() => {
@@ -84,13 +95,14 @@ export default function Home() {
     try {
       await saveEntry(todayISOUTC(), text);
       await loadEntries(search.trim());
+      refreshStreak();
       refreshQuote();
       entryRef.current?.focus();
       entryRef.current?.select();
     } catch (e) {
       alert("Save failed: " + (e as Error).message);
     }
-  }, [draft, saveEntry, loadEntries, search, refreshQuote]);
+  }, [draft, saveEntry, loadEntries, search, refreshStreak, refreshQuote]);
 
   const onDeleteEntry = useCallback(
     async (day: string) => {
@@ -98,11 +110,12 @@ export default function Home() {
       try {
         await api(`/entries/${day}`, { method: "DELETE" });
         await loadEntries(search.trim());
+        refreshStreak();
       } catch (e) {
         alert("Delete failed: " + (e as Error).message);
       }
     },
-    [loadEntries, search]
+    [loadEntries, search, refreshStreak]
   );
 
   const onExport = useCallback(async () => {
@@ -204,6 +217,8 @@ export default function Home() {
         onVote={onVote}
         onDelete={onDeleteQuote}
       />
+
+      <StreakBanner streak={streak} />
 
       <div id="bar">
         <input

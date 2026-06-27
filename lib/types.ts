@@ -6,6 +6,13 @@ export type Entry = {
   updated_at?: string;
 };
 
+export type Streak = {
+  current: number;
+  best: number;
+  loggedToday: boolean;
+  lastDay: string | null;
+};
+
 export type Quote = {
   id: number;
   text: string;
