@@ -18,6 +18,7 @@ export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [draft, setDraft] = useState("");
   const [savedDraft, setSavedDraft] = useState("");
   const [todayLabel, setTodayLabel] = useState("");
@@ -288,6 +289,13 @@ export default function Home() {
   const showCue = draft.trim() !== "" && draft.trim() !== savedDraft;
   const filtering = !!search.trim();
 
+  // Record shows the most recent entries by default; search always shows all matches.
+  const RECORD_PREVIEW = 7;
+  const collapsed = !filtering && !showAll && entries.length > RECORD_PREVIEW;
+  const visibleEntries = collapsed
+    ? entries.slice(0, RECORD_PREVIEW)
+    : entries;
+
   return (
     <div className="wrap">
       <header>
@@ -391,16 +399,36 @@ export default function Home() {
             {filtering ? "No matching entries." : "No entries yet."}
           </p>
         ) : (
-          <ul>
-            {entries.map((e) => (
-              <EntryRow
-                key={e.day}
-                entry={e}
-                onSave={saveEntry}
-                onDelete={onDeleteEntry}
-              />
-            ))}
-          </ul>
+          <>
+            <ul>
+              {visibleEntries.map((e) => (
+                <EntryRow
+                  key={e.day}
+                  entry={e}
+                  onSave={saveEntry}
+                  onDelete={onDeleteEntry}
+                />
+              ))}
+            </ul>
+            {collapsed && (
+              <button
+                className="record-cta"
+                type="button"
+                onClick={() => setShowAll(true)}
+              >
+                Show all {entries.length} entries
+              </button>
+            )}
+            {!filtering && showAll && entries.length > RECORD_PREVIEW && (
+              <button
+                className="record-cta"
+                type="button"
+                onClick={() => setShowAll(false)}
+              >
+                Show fewer
+              </button>
+            )}
+          </>
         )}
       </section>
 

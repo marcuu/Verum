@@ -317,6 +317,23 @@ li:focus-within .actions {
   padding: 0.8rem 0;
 }
 
+/* quiet full-width CTA to expand / collapse the record */
+.record-cta {
+  width: 100%;
+  margin-top: calc(var(--s) * 1.5);
+  padding: 0.7rem 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.record-cta:hover {
+  color: var(--ink);
+}
+
 /* ============ ZONE 3 — LIFE ============ */
 .life {
   margin-top: calc(var(--s) * 9);
