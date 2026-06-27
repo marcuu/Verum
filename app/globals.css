@@ -10,6 +10,7 @@
   --muted: #8a8a8a;
   --line: #ededed;
   --bg: #fff;
+  --surface: #fff;
   --accent: #0f0f0f;
   --done: #e8e8ef;
   --current: #111;
@@ -29,6 +30,7 @@
     --muted: #8f8f8f;
     --line: #232323;
     --bg: #0c0c0c;
+    --surface: #111;
     --accent: #eaeaea;
     --done: #1e1e24;
     --current: #eaeaea;
@@ -703,7 +705,7 @@ li:focus-within .actions {
   padding: 0.65rem;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--paper) 94%, var(--ink) 6%);
+  background: color-mix(in srgb, var(--surface) 94%, var(--ink) 6%);
 }
 
 .marker-editor-copy {
@@ -725,7 +727,7 @@ li:focus-within .actions {
   padding: 0.5rem 0.65rem;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--paper);
+  background: var(--surface);
   color: var(--ink);
   font: inherit;
   font-size: 0.86rem;
@@ -764,7 +766,7 @@ li:focus-within .actions {
 }
 
 .marker-actions button[aria-label$="marker"].selected {
-  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--marker-accent);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--marker-accent);
   opacity: 1;
 }
 
@@ -784,7 +786,7 @@ li:focus-within .actions {
 .cell.marker .dot {
   inset: 36%;
   z-index: 1;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .marker-error {
