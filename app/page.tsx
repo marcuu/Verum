@@ -182,11 +182,19 @@ export default function Home() {
   // ---- keyboard shortcuts ----
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      const isEditableTarget =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target instanceof HTMLButtonElement ||
+        target?.isContentEditable;
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         onSaveDraft();
       }
-      if (e.key === "/" && document.activeElement !== entryRef.current) {
+      if (e.key === "/" && !isEditableTarget) {
         e.preventDefault();
         searchRef.current?.focus();
       }
@@ -234,7 +242,7 @@ export default function Home() {
             }
           }}
         />
-        <button onClick={onSaveDraft}>Save (Enter)</button>
+        <button onClick={onSaveDraft} disabled={!draft.trim()}>Save (Enter)</button>
       </div>
       <div className="hint">
         <span>
