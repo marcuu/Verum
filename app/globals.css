@@ -51,8 +51,9 @@ body {
 
 .wrap {
   max-width: 720px;
-  margin: 7rem auto 6rem;
+  margin: 7rem auto 0;
   padding: 0 1.25rem;
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* ---- shared overline label for each zone ---- */
@@ -321,7 +322,7 @@ button:disabled {
 
 /* ============ ZONE 2 — RECORD ============ */
 .record {
-  margin-top: calc(var(--s) * 7);
+  margin-top: calc(var(--s) * 5);
 }
 
 .record-head {
@@ -405,7 +406,7 @@ li:focus-within .actions {
 
 /* ============ ZONE 3 — LIFE ============ */
 .life {
-  margin-top: calc(var(--s) * 9);
+  margin-top: calc(var(--s) * 5);
 }
 
 .life h3 {
@@ -488,11 +489,52 @@ li:focus-within .actions {
   background: var(--entry);
 }
 
+/* ============ BOTTOM NAV ============ */
+/* Three tabs across the foot of the screen; the spine's three zones become
+   three views. Quiet by default, the active tab carries full ink weight. */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  gap: clamp(1rem, 8vw, 4rem);
+  padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(1.1) blur(10px);
+  border-top: 1px solid var(--line);
+}
+
+.nav-tab {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 4rem;
+  padding: 0.35rem 0.6rem;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--r);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
+.nav-tab:hover:not(.active) {
+  color: var(--ink-2);
+}
+
+.nav-tab.active {
+  color: var(--ink);
+}
+
 /* ---- inline feedback: one quiet toast, replaces alert()/confirm() ---- */
 .flash {
   position: fixed;
   left: 50%;
-  bottom: 1.5rem;
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -553,20 +595,15 @@ li:focus-within .actions {
 /* ---- mobile-first overrides: tighter rhythm, comfortable tap targets ---- */
 @media (max-width: 640px) {
   .wrap {
-    margin: 3rem auto 4rem;
+    margin: 3rem auto 0;
     padding: 0 1rem;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 
-  .today {
-    margin-top: calc(var(--s) * 3);
-  }
-
-  .record {
-    margin-top: calc(var(--s) * 4.5);
-  }
-
+  .today,
+  .record,
   .life {
-    margin-top: calc(var(--s) * 5);
+    margin-top: calc(var(--s) * 3);
   }
 
   .capture input {
