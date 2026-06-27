@@ -200,60 +200,42 @@ li {
   gap: 0.4rem;
 }
 
-/* Streak banner */
-.streak {
+/* Streak strip — single line, no card */
+.streak-strip {
   display: flex;
   align-items: baseline;
+  gap: 0.25rem 0.45rem;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ink-2);
   flex-wrap: wrap;
-  gap: 0.5rem 0.9rem;
-  margin-top: 1rem;
-  padding: 0.7rem 0.9rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-}
-
-.streak-count {
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
 }
 
 .streak-flame {
-  margin-right: 0.15rem;
+  margin-right: 0.05rem;
+}
+
+.streak-num {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--ink);
 }
 
 .streak-unit {
-  font-weight: 400;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
 }
 
-.streak-copy {
-  font-size: 0.9rem;
-  color: var(--ink-2);
-}
-
-.streak-best {
-  margin-left: auto;
-  font-size: 0.75rem;
+.streak-sep {
   color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.1rem 0.5rem;
 }
 
-/* State accents: a left edge + tinted copy, kept subtle for dark/light. */
-.streak-logged {
-  border-left: 3px solid var(--entry);
+.streak-state {
+  color: var(--muted);
 }
-.streak-logged .streak-copy {
+
+.streak-strip.streak-strip-logged .streak-state {
   color: var(--entry);
-}
-.streak-risk {
-  border-left: 3px solid #d97706;
-}
-.streak-risk .streak-copy {
-  color: #d97706;
 }
 
 /* Life calendar */
