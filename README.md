@@ -67,6 +67,19 @@ npm run dev                  # http://localhost:3000
 Get the Supabase keys from **Dashboard → Project Settings → API**. The
 `SUPABASE_SERVICE_ROLE_KEY` is secret — keep it out of the browser and out of git.
 
+## Importing legacy SQLite data
+
+A one-off importer migrates the old `journal.db` / `quotes.db` into the
+`verum_*` tables (idempotent — safe to re-run):
+
+```bash
+npm install -D better-sqlite3
+# with NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in .env.local:
+npm run import -- --journal ./journal.db --quotes ./quotes.db
+# preview counts only:
+npm run import -- --dry
+```
+
 ## Deploy (Vercel)
 
 1. Import the repo in Vercel.
