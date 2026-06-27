@@ -212,6 +212,36 @@ export default function Home() {
     }
   }, [showFlash]);
 
+  // Notification deep links: ?tab=… selects a section; ?export=1 starts an
+  // export. Params are stripped afterwards so a reload doesn't repeat them.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const wantTab = params.get("tab");
+    const wantExport = params.get("export") === "1";
+
+    if (
+      wantTab === "quote" ||
+      wantTab === "record" ||
+      wantTab === "life" ||
+      wantTab === "reminders"
+    ) {
+      setTab(wantTab);
+    }
+
+    if (wantExport) {
+      onExport();
+    }
+
+    if (wantTab || params.has("export")) {
+      params.delete("tab");
+      params.delete("export");
+      const next = `${window.location.pathname}${
+        params.toString() ? `?${params.toString()}` : ""
+      }${window.location.hash}`;
+      window.history.replaceState({}, "", next);
+    }
+  }, [onExport]);
+
   const onLogout = useCallback(async () => {
     await api("/logout", { method: "POST" }).catch(() => {});
     window.location.href = "/login";
