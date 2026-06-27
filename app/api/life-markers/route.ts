@@ -7,7 +7,6 @@ import { T_LIFE_MARKERS } from "@/lib/constants";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_MARKERS = 12;
 const MAX_LABEL_LENGTH = 40;
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -60,32 +59,6 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getSupabaseAdmin();
-  const { data: existing, error: existingErr } = await db
-    .from(T_LIFE_MARKERS)
-    .select("week_index")
-    .eq("week_index", weekIndex)
-    .maybeSingle();
-
-  if (existingErr) {
-    return NextResponse.json({ error: existingErr.message }, { status: 500 });
-  }
-
-  if (!existing) {
-    const { count, error: countErr } = await db
-      .from(T_LIFE_MARKERS)
-      .select("week_index", { count: "exact", head: true });
-
-    if (countErr) {
-      return NextResponse.json({ error: countErr.message }, { status: 500 });
-    }
-    if ((count ?? 0) >= MAX_MARKERS) {
-      return NextResponse.json(
-        { error: `life markers are capped at ${MAX_MARKERS}` },
-        { status: 409 }
-      );
-    }
-  }
-
   const ts = utcTs();
   const { data, error } = await db
     .from(T_LIFE_MARKERS)

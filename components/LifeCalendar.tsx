@@ -8,7 +8,6 @@ import type { Entry, LifeMarker } from "@/lib/types";
 // Hardcoded life settings (overridable via NEXT_PUBLIC_* env).
 const DOB_FIXED = process.env.NEXT_PUBLIC_DOB ?? "1993-12-19";
 const EXP_FIXED = parseInt(process.env.NEXT_PUBLIC_LIFE_YEARS ?? "108", 10);
-const MAX_MARKERS = 12;
 
 type LifeMarkerMap = Record<string, LifeMarker>;
 
@@ -206,10 +205,6 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
     const label = draftLabel.trim();
     if (!label) return;
     const key = String(selectedWeek);
-    if (!markers[key] && markerCount(markers) >= MAX_MARKERS) {
-      setMarkerError(`Life markers are capped at ${MAX_MARKERS}.`);
-      return;
-    }
 
     setMarkerError("");
     try {
@@ -274,7 +269,7 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
         ≈ {remaining.toLocaleString()} weeks left.
       </div>
       <div className="life-stats">
-        {elapsed} of {total} weeks lived · {pct}% · {markerCount(markers)}/{MAX_MARKERS} markers
+        {elapsed} of {total} weeks lived · {pct}% · {markerCount(markers)} markers
       </div>
       {selectedWeek !== null && selectedBin && (
         <div className="marker-editor" aria-label="Life marker editor">
