@@ -6,7 +6,7 @@ export async function api<T = unknown>(
   const headers: Record<string, string> = {
     ...(opts.headers as Record<string, string>),
   };
-  if (opts.method === "POST") headers["Content-Type"] = "application/json";
+  if (opts.body != null) headers["Content-Type"] = "application/json";
 
   const res = await fetch(`/api${path}`, {
     ...opts,

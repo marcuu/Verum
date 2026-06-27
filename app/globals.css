@@ -403,6 +403,31 @@ li:focus-within .actions {
   color: var(--ink);
 }
 
+/* ============ REMINDERS ============ */
+.notifications {
+  margin-top: calc(var(--s) * 7);
+}
+
+.notification-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: calc(var(--s) * 1.5);
+}
+
+.notification-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.notification-controls input[type="time"] {
+  width: auto;
+}
+
 /* ============ ZONE 3 — LIFE ============ */
 .life {
   margin-top: calc(var(--s) * 9);

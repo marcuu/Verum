@@ -12,6 +12,7 @@ Personal daily journal + curated quotes, with a "life calendar" visualisation.
 - **Journal** — one quick-capture entry per day, inline editing, full-text search, JSON export.
 - **Quotes** — a daily pick with thumbs up/down voting; quotes crossing the score threshold become "core".
 - **Life calendar** — 52 weeks per age-year, marking past weeks, the current week, and weeks that have an entry.
+- **Reminders (PWA)** — installable as a Progressive Web App with Web Push. One calm daily reminder ("What happened today?") if the day hasn't been logged yet.
 
 ## Architecture
 
@@ -48,9 +49,32 @@ Four tables in the Supabase `public` schema, namespaced with a `verum_` prefix
 Plus the `verum_pick_daily_quote(day, core_threshold, avoid_days)` SQL function
 that selects and records the day's quote atomically. For existing projects, run `docs/supabase-life-markers.sql` once to add the life-marker table.
 
+Notification tables (`verum_notification_preferences`, `verum_notification_subscriptions`,
+`verum_notification_deliveries`) — run `docs/supabase-notifications.sql` once to add them.
+
 RLS is enabled with **no policies**, so the anon/publishable key cannot read or
 write. All access is via the service-role key from the server-side API routes,
 which sit behind the shared-token auth gate.
+
+## Notifications (PWA + Web Push)
+
+Verum is installable (`app/manifest.ts`, `public/sw.js`) and sends Web Push
+reminders. Setup:
+
+1. Run `docs/supabase-notifications.sql` in the Supabase SQL editor.
+2. Generate VAPID keys: `npx web-push generate-vapid-keys`.
+3. Set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, `WEB_PUSH_SUBJECT`
+   and `CRON_SECRET` (locally and in Vercel).
+4. Open the app → **Reminders** → *Enable reminders*, then *Send test*.
+
+The daily reminder is driven by `vercel.json`, a single once-daily cron at
+`30 19 * * *` (UTC) hitting `/api/cron/notifications`. Because a fixed UTC time
+drifts an hour across BST/GMT, the route uses a wide Europe/London window so it
+still fires near the configured time (default 20:30). It sends only if reminders
+are enabled, there's no entry for the local day, and one hasn't already gone out
+to that subscription — and disables subscriptions the push service reports as
+gone (404/410). On Vercel Pro you can switch to `*/15 * * * *` for minute-level
+precision; an external scheduler can call the route with `?secret=<CRON_SECRET>`.
 
 ## Auth
 
@@ -89,3 +113,7 @@ Get the Supabase keys from **Dashboard → Project Settings → API**. The
 | `QUOTES_AVOID_DAYS` | no | Default `14` |
 | `NEXT_PUBLIC_DOB` | no | Life calendar DOB, default `1993-12-19` |
 | `NEXT_PUBLIC_LIFE_YEARS` | no | Life calendar span, default `108` |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | for push | VAPID public key (browser-exposed) |
+| `WEB_PUSH_PRIVATE_KEY` | for push | **Secret** — VAPID private key, server only |
+| `WEB_PUSH_SUBJECT` | for push | `mailto:` contact for the push service |
+| `CRON_SECRET` | for push | **Secret** — protects the cron route |

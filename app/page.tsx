@@ -11,6 +11,7 @@ import EntryRow from "@/components/EntryRow";
 import PastEntries from "@/components/PastEntries";
 import LifeCalendar from "@/components/LifeCalendar";
 import StreakBanner from "@/components/StreakBanner";
+import NotificationSettings from "@/components/NotificationSettings";
 
 type FlashAction = { label: string; run: () => void | Promise<void> };
 type FlashState = { message: string; action?: FlashAction };
@@ -446,6 +447,9 @@ export default function Home() {
           </>
         )}
       </section>
+
+      {/* ===== REMINDERS ===== */}
+      <NotificationSettings />
 
       {/* ===== ZONE 3 — LIFE ===== */}
       <LifeCalendar entries={entries} />
