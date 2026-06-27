@@ -14,7 +14,8 @@
   --done: #e8e8ef;
   --current: #111;
   --entry: #8b5cf6;
-  --w: 12px;
+  --label: 48px; /* life-calendar row label width */
+  --cell-gap: 2px; /* life-calendar grid gap */
   --r: 10px; /* the single control radius */
   --s: 8px; /* spacing unit; layout rhythm is multiples of this */
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
@@ -37,7 +38,8 @@
 
 @media (max-width: 640px) {
   :root {
-    --w: 9px;
+    --label: 36px;
+    --cell-gap: 1px;
   }
 }
 
@@ -354,18 +356,14 @@ li:focus-within .actions {
   margin: 0.5rem 0 1.25rem;
 }
 
+/* Fluid grid: 52 columns sized as fractions of the available width, so the
+   calendar always fits the viewport and never forces horizontal overflow. */
 .year-line {
   display: grid;
-  grid-template-columns: 56px repeat(52, var(--w));
-  grid-auto-rows: var(--w);
-  gap: 2px;
-  margin-bottom: 2px;
-}
-
-@media (max-width: 640px) {
-  .year-line {
-    grid-template-columns: 48px repeat(52, var(--w));
-  }
+  grid-template-columns: var(--label) repeat(52, 1fr);
+  gap: var(--cell-gap);
+  margin-bottom: var(--cell-gap);
+  align-items: center;
 }
 
 .year-label {
@@ -375,6 +373,12 @@ li:focus-within .actions {
   padding-right: 0.25rem;
 }
 
+@media (max-width: 640px) {
+  .year-label {
+    font-size: 0.62rem;
+  }
+}
+
 .year-label.bold {
   color: var(--ink-2);
   font-weight: 600;
@@ -382,8 +386,8 @@ li:focus-within .actions {
 
 .cell {
   position: relative;
-  width: var(--w);
-  height: var(--w);
+  width: 100%;
+  aspect-ratio: 1;
   border: 1px solid var(--line);
   border-radius: 2px;
   background: transparent;
@@ -397,15 +401,13 @@ li:focus-within .actions {
   box-shadow: inset 0 0 0 2px var(--current);
 }
 
+/* Dot scales with the cell (inset %) instead of a fixed 4px, so it stays
+   proportional from desktop down to ~5px phone cells. */
 .cell .dot {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  inset: 28%;
   border-radius: 50%;
   background: var(--entry);
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
 }
 
 /* ---- inline feedback: one quiet toast, replaces alert()/confirm() ---- */
@@ -468,4 +470,48 @@ li:focus-within .actions {
   color: #e11d48;
   margin-top: 0.75rem;
   font-size: 0.9rem;
+}
+
+/* ---- mobile-first overrides: tighter rhythm, comfortable tap targets ---- */
+@media (max-width: 640px) {
+  .wrap {
+    margin: 3rem auto 4rem;
+    padding: 0 1rem;
+  }
+
+  .today {
+    margin-top: calc(var(--s) * 3);
+  }
+
+  .record {
+    margin-top: calc(var(--s) * 4.5);
+  }
+
+  .life {
+    margin-top: calc(var(--s) * 5);
+  }
+
+  .capture input {
+    font-size: 1.2rem;
+  }
+
+  /* ~44px tap targets for the icon controls */
+  .utility button.ghost,
+  .record-head button.ghost {
+    padding: 0.6rem;
+  }
+
+  /* hover-reveal doesn't exist on touch — keep row/quote actions visible */
+  .actions,
+  .qActions {
+    opacity: 0.55;
+  }
+}
+
+/* On touch devices there is no hover, so never hide affordances behind it. */
+@media (hover: none) {
+  .actions,
+  .qActions {
+    opacity: 0.55;
+  }
 }
