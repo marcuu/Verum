@@ -8,6 +8,7 @@ import type { StreakInfo } from "@/lib/streak";
 import type { Entry, Quote } from "@/lib/types";
 import QuoteBox from "@/components/QuoteBox";
 import EntryRow from "@/components/EntryRow";
+import PastEntries from "@/components/PastEntries";
 import LifeCalendar from "@/components/LifeCalendar";
 import StreakBanner from "@/components/StreakBanner";
 
@@ -24,6 +25,7 @@ export default function Home() {
   const [todayLabel, setTodayLabel] = useState("");
   const [streak, setStreak] = useState<StreakInfo | null>(null);
   const [hasLoggedToday, setHasLoggedToday] = useState(false);
+  const [pastEntries, setPastEntries] = useState<Entry[]>([]);
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -82,6 +84,16 @@ export default function Home() {
     }
   }, []);
 
+  // On this day in prior years — real entries sharing today's month-day.
+  const loadPastEntries = useCallback(async () => {
+    try {
+      const data = await api<Entry[]>("/entries/anniversaries");
+      setPastEntries(data);
+    } catch {
+      setPastEntries([]); // recall is a quiet extra; failing it is silent.
+    }
+  }, []);
+
   // initial load — quote only fires if today's entry already exists
   useEffect(() => {
     const d = new Date();
@@ -97,7 +109,8 @@ export default function Home() {
         if (todayEntry) refreshQuote();
       })
       .catch(() => showFlash("Couldn't load your entries. Reload to retry."));
-  }, [loadEntries, refreshQuote, showFlash]);
+    loadPastEntries();
+  }, [loadEntries, refreshQuote, showFlash, loadPastEntries]);
 
   // debounced search
   useEffect(() => {
@@ -348,6 +361,8 @@ export default function Home() {
             ↵ to save
           </span>
         </div>
+
+        <PastEntries entries={pastEntries} today={todayISOUTC()} />
 
         <StreakBanner streak={streak} />
 

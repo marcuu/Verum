@@ -215,6 +215,73 @@ button:disabled {
   color: var(--entry);
 }
 
+/* on this day in prior years — quiet recall, collapsed by default */
+.past {
+  margin-top: calc(var(--s) * 2);
+}
+
+.past ul {
+  margin: 0;
+}
+
+.past li {
+  display: block;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.past li:first-child {
+  border-top: none;
+}
+
+.past-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.past-toggle:hover .past-when {
+  color: var(--ink);
+}
+
+.past-when {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.past-when::after {
+  content: ":";
+}
+
+.past-preview {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.past-row.open .past-preview {
+  display: none;
+}
+
+.past-text {
+  flex: none;
+  padding: 0 0 0.7rem;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+}
+
 /* quote — the earned reward, lives in the today zone, borderless */
 .quoteBox {
   margin-top: calc(var(--s) * 3);
