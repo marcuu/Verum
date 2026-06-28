@@ -158,6 +158,54 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* ============ HEADER SETTINGS MENU ============ */
+.headerMenuWrap {
+  position: relative;
+}
+
+.headerMenu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  min-width: 11rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 30;
+  overflow: hidden;
+}
+
+.headerMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.headerMenuItem:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.headerMenuItem--danger {
+  color: #c0392b;
+}
+
+@media (prefers-color-scheme: dark) {
+  .headerMenuItem--danger {
+    color: #e74c3c;
+  }
+}
+
 /* ============ ZONE 1 — TODAY ============ */
 .today {
   margin-top: calc(var(--s) * 5);
