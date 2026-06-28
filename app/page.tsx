@@ -399,6 +399,15 @@ export default function Home() {
                   type="button"
                   role="menuitem"
                   className="headerMenuItem"
+                  onClick={() => { setHeaderMenuOpen(false); setTab("reminders"); }}
+                >
+                  <Bell size={15} aria-hidden="true" />
+                  Reminders
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="headerMenuItem"
                   onClick={() => { setHeaderMenuOpen(false); onExport(); }}
                 >
                   <Download size={15} aria-hidden="true" />
@@ -618,15 +627,6 @@ export default function Home() {
         >
           <List size={20} />
           <span>Journal</span>
-        </button>
-        <button
-          type="button"
-          className={"nav-tab" + (tab === "reminders" ? " active" : "")}
-          aria-current={tab === "reminders" ? "page" : undefined}
-          onClick={() => setTab("reminders")}
-        >
-          <Bell size={20} />
-          <span>Reminders</span>
         </button>
         <button
           type="button"
