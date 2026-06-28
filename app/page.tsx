@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell } from "lucide-react";
+import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
@@ -43,6 +43,8 @@ export default function Home() {
   const searchRef = useRef<HTMLInputElement>(null);
   const entryRef = useRef<HTMLInputElement>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const headerMenuRef = useRef<HTMLDivElement>(null);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
 
   // ---- inline feedback (replaces alert/confirm) ----
   const showFlash = useCallback(
@@ -56,6 +58,17 @@ export default function Home() {
   useEffect(() => () => {
     if (flashTimer.current) clearTimeout(flashTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (!headerMenuOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
+        setHeaderMenuOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [headerMenuOpen]);
 
   // ---- data ----
   // Returns today's entry if found (only on unfiltered fetches).
@@ -367,24 +380,41 @@ export default function Home() {
           <h1>Verum</h1>
         </div>
         <div className="utility">
-          <button
-            className="ghost"
-            type="button"
-            onClick={onExport}
-            aria-label="Export entries"
-            title="Export"
-          >
-            <Download size={18} />
-          </button>
-          <button
-            className="ghost"
-            type="button"
-            onClick={onLogout}
-            aria-label="Change token"
-            title="Change token"
-          >
-            <LogOut size={18} />
-          </button>
+          <div className="headerMenuWrap" ref={headerMenuRef}>
+            <button
+              className="ghost"
+              type="button"
+              aria-label="Settings"
+              title="Settings"
+              aria-expanded={headerMenuOpen}
+              aria-haspopup="menu"
+              onClick={() => setHeaderMenuOpen((o) => !o)}
+            >
+              <Settings size={18} />
+            </button>
+            {headerMenuOpen && (
+              <div className="headerMenu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="headerMenuItem"
+                  onClick={() => { setHeaderMenuOpen(false); onExport(); }}
+                >
+                  <Download size={15} aria-hidden="true" />
+                  Export entries
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="headerMenuItem headerMenuItem--danger"
+                  onClick={() => { setHeaderMenuOpen(false); onLogout(); }}
+                >
+                  <LogOut size={15} aria-hidden="true" />
+                  Log out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
