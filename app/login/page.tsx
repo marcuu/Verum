@@ -3,11 +3,12 @@
 import { Suspense, useState } from "react";
 import MoonPhaseIcon from "@/components/MoonPhaseIcon";
 import { useRouter, useSearchParams } from "next/navigation";
+import { safeNextPath } from "@/lib/navigation";
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/";
+  const next = safeNextPath(params.get("next"));
 
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
@@ -49,6 +50,7 @@ function LoginForm() {
       <form onSubmit={onSubmit} className="login-form">
         <input
           type="password"
+          aria-label="Access token"
           placeholder="Access token"
           value={token}
           onChange={(e) => setToken(e.target.value)}

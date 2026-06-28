@@ -67,14 +67,20 @@ reminders. Setup:
    and `CRON_SECRET` (locally and in Vercel).
 4. Open the app → **Reminders** → *Enable reminders*, then *Send test*.
 
-The daily reminder is driven by `vercel.json`, a single once-daily cron at
-`30 19 * * *` (UTC) hitting `/api/cron/notifications`. Because a fixed UTC time
-drifts an hour across BST/GMT, the route uses a wide Europe/London window so it
-still fires near the configured time (default 20:30). It sends only if reminders
-are enabled, there's no entry for the local day, and one hasn't already gone out
-to that subscription — and disables subscriptions the push service reports as
-gone (404/410). On Vercel Pro you can switch to `*/15 * * * *` for minute-level
-precision; an external scheduler can call the route with `?secret=<CRON_SECRET>`.
+Reminders are driven by the four cron entries in `vercel.json`, each calling
+`/api/cron/notifications?job=...` at its own UTC time:
+
+- `backup` at `0 9 * * *`
+- `weekly` at `0 17 * * *`
+- `daily` at `30 19 * * *`
+- `rescue` at `0 21 * * *`
+
+The cron schedule provides the time-of-day trigger; the route validates
+`CRON_SECRET`, loads the configured timezone, then applies each job's own
+eligibility rules. Daily reminders send only if reminders are enabled, there's
+no entry for the local day, and one hasn't already gone out to that
+subscription. Stale push subscriptions reported as gone (404/410) are disabled.
+An external scheduler can call the route with `?secret=<CRON_SECRET>`.
 
 ## Auth
 
