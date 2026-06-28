@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import MoonPhaseIcon from "@/components/MoonPhaseIcon";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function LoginForm() {
@@ -38,7 +39,7 @@ function LoginForm() {
   return (
     <main className="login">
       <div className="brand">
-        <div className="moon" aria-hidden="true" />
+        <MoonPhaseIcon />
         <div>
           <h1>Verum</h1>
           <div className="sub">daily journal</div>

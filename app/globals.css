@@ -92,14 +92,6 @@ h1 {
   font-size: 0.85rem;
 }
 
-.moon {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--ink);
-  box-shadow: inset -7px 0 0 0 var(--bg);
-}
-
 .utility {
   display: flex;
   gap: 0.15rem;
