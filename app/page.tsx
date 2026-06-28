@@ -421,7 +421,7 @@ export default function Home() {
 
       {/* ===== ZONE 1 — TODAY ===== */}
       <section
-        className="today"
+        className={"today" + (hasLoggedToday ? " today--logged" : "")}
         aria-label="Today"
         hidden={tab !== "today"}
       >
