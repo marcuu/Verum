@@ -374,6 +374,54 @@ button:disabled {
   padding: 0.4rem;
 }
 
+/* overflow menu — delete is one extra tap away from the vote buttons */
+.qOverflow {
+  position: relative;
+}
+
+.qMenu {
+  position: absolute;
+  bottom: calc(100% + 0.35rem);
+  right: 0;
+  min-width: 10rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 30;
+  overflow: hidden;
+}
+
+.qMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.qMenuItem:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.qMenuItem--danger {
+  color: #c0392b;
+}
+
+@media (prefers-color-scheme: dark) {
+  .qMenuItem--danger {
+    color: #e74c3c;
+  }
+}
+
 /* ============ ZONE 2 — RECORD ============ */
 .record {
   margin-top: calc(var(--s) * 5);
