@@ -3,11 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { api } from "@/lib/client";
+import { parseIntegerSetting, parseISODateSetting } from "@/lib/env";
 import type { Entry, LifeMarker } from "@/lib/types";
 
 // Hardcoded life settings (overridable via NEXT_PUBLIC_* env).
-const DOB_FIXED = process.env.NEXT_PUBLIC_DOB ?? "1993-12-19";
-const EXP_FIXED = parseInt(process.env.NEXT_PUBLIC_LIFE_YEARS ?? "108", 10);
+const DOB_FIXED = parseISODateSetting(
+  process.env.NEXT_PUBLIC_DOB,
+  "1993-12-19"
+);
+const EXP_FIXED = parseIntegerSetting(
+  process.env.NEXT_PUBLIC_LIFE_YEARS,
+  108,
+  { min: 1, max: 150 }
+);
 
 type LifeMarkerMap = Record<string, LifeMarker>;
 

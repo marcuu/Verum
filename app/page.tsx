@@ -443,6 +443,7 @@ export default function Home() {
               ref={entryRef}
               autoFocus
               type="text"
+              aria-label="Today's journal entry"
               placeholder={CAPTURE_PROMPT}
               autoComplete="off"
               value={draft}
@@ -488,6 +489,7 @@ export default function Home() {
             <input
               ref={entryRef}
               type="text"
+              aria-label="Today's journal entry"
               placeholder={CAPTURE_PROMPT}
               autoComplete="off"
               value={draft}
@@ -548,6 +550,7 @@ export default function Home() {
             id="search"
             ref={searchRef}
             type="search"
+            aria-label="Search previous entries"
             placeholder="Search previous entries…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

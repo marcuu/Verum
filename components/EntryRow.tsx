@@ -37,6 +37,7 @@ export default function EntryRow({
       <div
         className="text"
         contentEditable
+        aria-label={`Entry text for ${entry.day}`}
         suppressContentEditableWarning
         spellCheck={false}
         ref={ref}

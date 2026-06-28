@@ -8,13 +8,19 @@ export const STREAK_GRACE_DAYS = 1;  // max missed days per rolling window
 export const STREAK_GRACE_WINDOW = 7; // window size in calendar days
 
 // Server-only config derived from environment variables.
+import { parseIntegerSetting } from "@/lib/env";
 
-export const CORE_THRESHOLD = parseInt(
-  process.env.QUOTES_CORE_THRESHOLD ?? "3",
-  10
+export const CORE_THRESHOLD = parseIntegerSetting(
+  process.env.QUOTES_CORE_THRESHOLD,
+  3,
+  { min: 1 }
 );
 
-export const AVOID_DAYS = parseInt(process.env.QUOTES_AVOID_DAYS ?? "14", 10);
+export const AVOID_DAYS = parseIntegerSetting(
+  process.env.QUOTES_AVOID_DAYS,
+  14,
+  { min: 0 }
+);
 
 // Table names (verum_ prefixed, co-located in the public schema).
 export const T_ENTRIES = "verum_entries";
