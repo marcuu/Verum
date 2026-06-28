@@ -20,7 +20,7 @@ Alan Cooper: The main workflow is efficient: open, write, save. Secondary workfl
 |---|---|---|---|---:|---|
 | P0 | Life marker editor uses an undefined CSS token. | `app/globals.css` referenced `var(--paper)` though only `--bg` existed. | Marker editor background, input surface, and selected-ring contrast render consistently in light and dark mode. | 1 | Done |
 | P1 | Product inventory was stale after recent UX changes. | Tracker still described confirmation dialogs and omitted newer reminders, notification jobs, past entries, and life markers. | Future review and development starts from an accurate map of the product. | 2 | Done |
-| P2 | Reminders is the densest screen in an otherwise quiet app. | Four reminder groups plus setup copy and test controls share one tab. | Consider progressive disclosure for advanced reminder types after core daily setup. | 4 | Open |
+| P2 | Reminders is the densest screen in an otherwise quiet app. | Four reminder groups plus setup copy and test controls shared one tab. | Advanced reminder types now sit behind a native disclosure after core daily setup. | 4 | Done |
 | P3 | UTC day semantics may not match a user's local journaling mental model. | Daily capture and streak use UTC helpers while notifications use Europe/London scheduling. | Decide and document whether Verum is UTC-based or local-day-based end to end. | 5 | Open |
 | P4 | Validation is mostly type/build plus static review. | No unit/E2E coverage for save, undo, reminders preferences, or life marker editing. | Add small, focused tests around the highest-risk flows. | 6 | Open |
 
@@ -28,10 +28,10 @@ Alan Cooper: The main workflow is efficient: open, write, save. Secondary workfl
 
 | Metric | Score |
 |---|---:|
-| Product Health | 82 |
-| Product Quality | 84 |
-| UX | 86 |
-| Design Craft | 82 |
+| Product Health | 84 |
+| Product Quality | 85 |
+| UX | 88 |
+| Design Craft | 84 |
 | Growth / Retention | 78 |
 | Strategic Product | 88 |
 | Test Coverage | 45 |
@@ -39,7 +39,7 @@ Alan Cooper: The main workflow is efficient: open, write, save. Secondary workfl
 ## Remaining Highest-Impact Opportunities
 
 1. Add focused tests for life marker editing, entry undo, and notification preference validation.
-2. Simplify the Reminders tab with progressive disclosure for rescue, weekly, and backup reminders.
-3. Resolve UTC versus local-day semantics across entries, streaks, anniversaries, and notifications.
-4. Add a tiny quote curation workflow or document the API-only workflow more explicitly.
-5. Consider a first-run empty state that teaches capture without becoming onboarding chrome.
+2. Resolve UTC versus local-day semantics across entries, streaks, anniversaries, and notifications.
+3. Add a tiny quote curation workflow or document the API-only workflow more explicitly.
+4. Consider a first-run empty state that teaches capture without becoming onboarding chrome.
+5. Review whether reminder copy can be shortened further without hurting setup clarity.

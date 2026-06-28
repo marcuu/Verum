@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import {
   getCurrentSubscription,
@@ -32,6 +32,8 @@ export default function NotificationSettings() {
   const [prefs, setPrefs] = useState<Preferences | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const advancedInitialized = useRef(false);
 
   async function refresh() {
     const ok = isNotificationSupported();
@@ -52,6 +54,15 @@ export default function NotificationSettings() {
   useEffect(() => {
     refresh();
   }, []);
+
+  useEffect(() => {
+    if (!prefs) return;
+    if (advancedInitialized.current) return;
+    advancedInitialized.current = true;
+    if (prefs.rescue_enabled || prefs.weekly_enabled || prefs.backup_enabled) {
+      setAdvancedOpen(true);
+    }
+  }, [prefs]);
 
   async function enable() {
     setBusy(true);
@@ -166,15 +177,25 @@ export default function NotificationSettings() {
 
       {supported && permission !== "denied" && (
         <div className="notification-controls">
-          {!subscribed ? (
-            <button type="button" onClick={enable} disabled={busy}>
-              Enable reminders
+          <div className="notification-primary">
+            {!subscribed ? (
+              <button type="button" onClick={enable} disabled={busy}>
+                Enable reminders
+              </button>
+            ) : (
+              <button type="button" onClick={disableDevice} disabled={busy}>
+                Disable on this device
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={sendTest}
+              disabled={busy || !subscribed}
+            >
+              Send test
             </button>
-          ) : (
-            <button type="button" onClick={disableDevice} disabled={busy}>
-              Disable on this device
-            </button>
-          )}
+          </div>
 
           {prefs && (
             <>
@@ -201,131 +222,142 @@ export default function NotificationSettings() {
                 />
               </div>
 
-              {/* Streak rescue */}
-              <div className="notification-group">
-                <label className="notification-row">
-                  <input
-                    type="checkbox"
-                    checked={prefs.rescue_enabled}
-                    onChange={(e) =>
-                      savePrefs({ rescue_enabled: e.target.checked })
-                    }
-                  />
-                  Streak rescue
-                </label>
-                <p className="empty">
-                  A late nudge if an active streak is about to break.
-                </p>
-                <div className="notification-row">
-                  <input
-                    type="time"
-                    aria-label="Streak rescue time"
-                    value={prefs.rescue_time.slice(0, 5)}
-                    onChange={(e) => savePrefs({ rescue_time: e.target.value })}
-                  />
-                  <label className="notification-row">
-                    Min streak
-                    <input
-                      type="number"
-                      min={2}
-                      max={365}
-                      aria-label="Minimum streak"
-                      value={prefs.rescue_min_streak}
-                      onChange={(e) =>
-                        savePrefs({ rescue_min_streak: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Weekly reflection */}
-              <div className="notification-group">
-                <label className="notification-row">
-                  <input
-                    type="checkbox"
-                    checked={prefs.weekly_enabled}
-                    onChange={(e) =>
-                      savePrefs({ weekly_enabled: e.target.checked })
-                    }
-                  />
-                  Weekly reflection
-                </label>
-                <p className="empty">
-                  A once-a-week prompt to review the record.
-                </p>
-                <div className="notification-row">
-                  <select
-                    aria-label="Weekly reflection day"
-                    value={prefs.weekly_day}
-                    onChange={(e) =>
-                      savePrefs({ weekly_day: Number(e.target.value) })
-                    }
-                  >
-                    <option value={0}>Sunday</option>
-                    <option value={1}>Monday</option>
-                    <option value={2}>Tuesday</option>
-                    <option value={3}>Wednesday</option>
-                    <option value={4}>Thursday</option>
-                    <option value={5}>Friday</option>
-                    <option value={6}>Saturday</option>
-                  </select>
-                  <input
-                    type="time"
-                    aria-label="Weekly reflection time"
-                    value={prefs.weekly_time.slice(0, 5)}
-                    onChange={(e) => savePrefs({ weekly_time: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* Monthly backup */}
-              <div className="notification-group">
-                <label className="notification-row">
-                  <input
-                    type="checkbox"
-                    checked={prefs.backup_enabled}
-                    onChange={(e) =>
-                      savePrefs({ backup_enabled: e.target.checked })
-                    }
-                  />
-                  Monthly backup
-                </label>
-                <p className="empty">
-                  A quiet reminder to export your journal.
-                </p>
-                <div className="notification-row">
-                  <label className="notification-row">
-                    Day
-                    <input
-                      type="number"
-                      min={1}
-                      max={28}
-                      aria-label="Backup day of month"
-                      value={prefs.backup_day_of_month}
-                      onChange={(e) =>
-                        savePrefs({
-                          backup_day_of_month: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </label>
-                  <input
-                    type="time"
-                    aria-label="Monthly backup time"
-                    value={prefs.backup_time.slice(0, 5)}
-                    onChange={(e) => savePrefs({ backup_time: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={sendTest}
-                disabled={busy || !subscribed}
+              <details
+                className="notification-advanced"
+                onToggle={(e) =>
+                  setAdvancedOpen(e.currentTarget.open)
+                }
+                open={advancedOpen}
               >
-                Send test
-              </button>
+                <summary>Advanced</summary>
+                <div className="notification-advanced-panel">
+                  {/* Streak rescue */}
+                  <div className="notification-group">
+                    <label className="notification-row">
+                      <input
+                        type="checkbox"
+                        checked={prefs.rescue_enabled}
+                        onChange={(e) =>
+                          savePrefs({ rescue_enabled: e.target.checked })
+                        }
+                      />
+                      Streak rescue
+                    </label>
+                    <p className="empty">
+                      A late nudge if an active streak is about to break.
+                    </p>
+                    <div className="notification-row">
+                      <input
+                        type="time"
+                        aria-label="Streak rescue time"
+                        value={prefs.rescue_time.slice(0, 5)}
+                        onChange={(e) =>
+                          savePrefs({ rescue_time: e.target.value })
+                        }
+                      />
+                      <label className="notification-row">
+                        Min streak
+                        <input
+                          type="number"
+                          min={2}
+                          max={365}
+                          aria-label="Minimum streak"
+                          value={prefs.rescue_min_streak}
+                          onChange={(e) =>
+                            savePrefs({
+                              rescue_min_streak: Number(e.target.value),
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Weekly reflection */}
+                  <div className="notification-group">
+                    <label className="notification-row">
+                      <input
+                        type="checkbox"
+                        checked={prefs.weekly_enabled}
+                        onChange={(e) =>
+                          savePrefs({ weekly_enabled: e.target.checked })
+                        }
+                      />
+                      Weekly reflection
+                    </label>
+                    <p className="empty">
+                      A once-a-week prompt to review the record.
+                    </p>
+                    <div className="notification-row">
+                      <select
+                        aria-label="Weekly reflection day"
+                        value={prefs.weekly_day}
+                        onChange={(e) =>
+                          savePrefs({ weekly_day: Number(e.target.value) })
+                        }
+                      >
+                        <option value={0}>Sunday</option>
+                        <option value={1}>Monday</option>
+                        <option value={2}>Tuesday</option>
+                        <option value={3}>Wednesday</option>
+                        <option value={4}>Thursday</option>
+                        <option value={5}>Friday</option>
+                        <option value={6}>Saturday</option>
+                      </select>
+                      <input
+                        type="time"
+                        aria-label="Weekly reflection time"
+                        value={prefs.weekly_time.slice(0, 5)}
+                        onChange={(e) =>
+                          savePrefs({ weekly_time: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Monthly backup */}
+                  <div className="notification-group">
+                    <label className="notification-row">
+                      <input
+                        type="checkbox"
+                        checked={prefs.backup_enabled}
+                        onChange={(e) =>
+                          savePrefs({ backup_enabled: e.target.checked })
+                        }
+                      />
+                      Monthly backup
+                    </label>
+                    <p className="empty">
+                      A quiet reminder to export your journal.
+                    </p>
+                    <div className="notification-row">
+                      <label className="notification-row">
+                        Day
+                        <input
+                          type="number"
+                          min={1}
+                          max={28}
+                          aria-label="Backup day of month"
+                          value={prefs.backup_day_of_month}
+                          onChange={(e) =>
+                            savePrefs({
+                              backup_day_of_month: Number(e.target.value),
+                            })
+                          }
+                        />
+                      </label>
+                      <input
+                        type="time"
+                        aria-label="Monthly backup time"
+                        value={prefs.backup_time.slice(0, 5)}
+                        onChange={(e) =>
+                          savePrefs({ backup_time: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </details>
 
               <p className="empty">
                 Reminder times are approximate on this plan &mdash; they can
