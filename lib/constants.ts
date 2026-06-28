@@ -1,6 +1,12 @@
 // Shared between the capture UI and the daily reminder notification body.
 export const CAPTURE_PROMPT = "What happened today?";
 
+// Streak display threshold and grace-day forgiveness model (§5.6).
+// Plain numbers so they're importable in both client and server bundles.
+export const STREAK_THRESHOLD = 3;   // hide streak below this
+export const STREAK_GRACE_DAYS = 1;  // max missed days per rolling window
+export const STREAK_GRACE_WINDOW = 7; // window size in calendar days
+
 // Server-only config derived from environment variables.
 
 export const CORE_THRESHOLD = parseInt(
