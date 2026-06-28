@@ -10,6 +10,7 @@
   --muted: #757575; /* was #8a8a8a — lifted to 4.6:1 on white (WCAG AA) */
   --line: #ededed;
   --bg: #fff;
+  --surface: #fff;
   --accent: #0f0f0f;
   --done: #e8e8ef;
   --current: #111;
@@ -29,6 +30,7 @@
     --muted: #8f8f8f;
     --line: #232323;
     --bg: #0c0c0c;
+    --surface: #111;
     --accent: #eaeaea;
     --done: #1e1e24;
     --current: #eaeaea;
@@ -560,10 +562,17 @@ li:focus-within .actions {
 
 .notification-controls {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: calc(var(--s) * 1.5);
+}
+
+.notification-primary {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-  margin-top: calc(var(--s) * 1.5);
 }
 
 .notification-row {
@@ -576,6 +585,43 @@ li:focus-within .actions {
 
 .notification-controls input[type="time"] {
   width: auto;
+}
+
+.notification-advanced {
+  margin-top: calc(var(--s) * 1.5);
+}
+
+.notification-advanced summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  list-style: none;
+}
+
+.notification-advanced summary::-webkit-details-marker {
+  display: none;
+}
+
+.notification-advanced summary::before {
+  content: "+";
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.notification-advanced[open] summary::before {
+  content: "-";
+}
+
+.notification-advanced summary:hover {
+  color: var(--ink);
+}
+
+.notification-advanced-panel {
+  margin-top: calc(var(--s) * 1.25);
+  border-top: 1px solid var(--line);
 }
 
 /* one block per notification type, kept calm and stacked */
@@ -939,7 +985,7 @@ li:focus-within .actions {
   padding: 0.65rem;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--paper) 94%, var(--ink) 6%);
+  background: color-mix(in srgb, var(--surface) 94%, var(--ink) 6%);
 }
 
 .marker-editor-copy {
@@ -961,7 +1007,7 @@ li:focus-within .actions {
   padding: 0.5rem 0.65rem;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--paper);
+  background: var(--surface);
   color: var(--ink);
   font: inherit;
   font-size: 0.86rem;
@@ -1000,7 +1046,7 @@ li:focus-within .actions {
 }
 
 .marker-actions button[aria-label$="marker"].selected {
-  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--marker-accent);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--marker-accent);
   opacity: 1;
 }
 
@@ -1020,7 +1066,7 @@ li:focus-within .actions {
 .cell.marker .dot {
   inset: 36%;
   z-index: 1;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .marker-error {
