@@ -11,8 +11,11 @@ function yearsAgo(day: string, today: string): number {
   return Number(today.slice(0, 4)) - Number(day.slice(0, 4));
 }
 
-function whenLabel(years: number): string {
-  return years === 1 ? "1 year ago" : `${years} years ago`;
+// Show the year explicitly so the label is unambiguous in historical views.
+function whenLabel(day: string, years: number): string {
+  const year = day.slice(0, 4);
+  const yearsLabel = years === 1 ? "1 year ago" : `${years} years ago`;
+  return `${year} · ${yearsLabel}`;
 }
 
 function PastEntryRow({ entry, years }: { entry: Entry; years: number }) {
@@ -26,7 +29,7 @@ function PastEntryRow({ entry, years }: { entry: Entry; years: number }) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="past-when">{whenLabel(years)}</span>
+        <span className="past-when">{whenLabel(entry.day, years)}</span>
         <span className="past-preview" aria-hidden={open}>
           {entry.text}
         </span>

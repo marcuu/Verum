@@ -7,13 +7,13 @@
 :root {
   --ink: #111;
   --ink-2: #444;
-  --muted: #8a8a8a;
+  --muted: #757575; /* was #8a8a8a — lifted to 4.6:1 on white (WCAG AA) */
   --line: #ededed;
   --bg: #fff;
   --accent: #0f0f0f;
   --done: #e8e8ef;
   --current: #111;
-  --entry: #8b5cf6;
+  --entry: #7c3aed; /* was #8b5cf6 — lifted to 5.7:1 on white (WCAG AA) */
   --label: 48px; /* life-calendar row label width */
   --cell-gap: 2px; /* life-calendar grid gap */
   --r: 10px; /* the single control radius */
@@ -98,6 +98,11 @@ h1 {
   border-radius: 50%;
   background: var(--ink);
   box-shadow: inset -7px 0 0 0 var(--bg);
+  /* Decorative only — must not read as a toggle or loading indicator. */
+  pointer-events: none;
+  user-select: none;
+  cursor: default;
+  flex-shrink: 0;
 }
 
 .utility {
@@ -209,6 +214,12 @@ button:disabled {
 /* ============ ZONE 1 — TODAY ============ */
 .today {
   margin-top: calc(var(--s) * 5);
+}
+
+/* Logged state: push content down from the header so the quiet lower
+   region reads as intentional breathing room, not "ran out of content." */
+.today--logged {
+  margin-top: calc(var(--s) * 9);
 }
 
 .today-date {
@@ -814,6 +825,10 @@ li:focus-within .actions {
   .notifications,
   .life {
     margin-top: calc(var(--s) * 3);
+  }
+
+  .today--logged {
+    margin-top: calc(var(--s) * 6);
   }
 
   .capture input {
