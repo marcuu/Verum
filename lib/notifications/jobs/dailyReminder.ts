@@ -1,4 +1,4 @@
-import { T_ENTRIES } from "@/lib/constants";
+import { CAPTURE_PROMPT, T_ENTRIES } from "@/lib/constants";
 import { sendLoggedNotification } from "../delivery";
 import type { JobContext, JobResult } from "../types";
 
@@ -34,7 +34,7 @@ export async function runDailyReminder({
       logicalDay: local.isoDay,
       payload: {
         title: "Verum",
-        body: "What happened today?",
+        body: CAPTURE_PROMPT,
         url: "/",
         tag: `verum-daily-${local.isoDay}`,
         type: "daily_reminder",

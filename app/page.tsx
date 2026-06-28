@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut, Search, CalendarDays, List, Grid3x3, Bell } from "lucide-react";
+import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
+import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
 import type { Entry, Quote } from "@/lib/types";
@@ -30,6 +31,8 @@ export default function Home() {
   const [streak, setStreak] = useState<StreakInfo | null>(null);
   const [hasLoggedToday, setHasLoggedToday] = useState(false);
   const [pastEntries, setPastEntries] = useState<Entry[]>([]);
+
+  const [todayEditMode, setTodayEditMode] = useState(false);
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -138,19 +141,25 @@ export default function Home() {
   const onSaveDraft = useCallback(async () => {
     const text = draft.trim();
     if (!text || text === savedDraft) return;
+    // Optimistic transition: show the logged state immediately before the
+    // round-trip completes so the UI feels instant.
+    const wasLoggedToday = hasLoggedToday;
+    setSavedDraft(text);
+    setHasLoggedToday(true);
+    setTodayEditMode(false);
     try {
       await saveEntry(todayISOUTC(), text);
-      // Always reload full list so streak + hasLoggedToday are recomputed correctly.
-      await loadEntries("");
-      setSavedDraft(text);
-      setHasLoggedToday(true);
-      refreshQuote();
-      entryRef.current?.focus();
-      entryRef.current?.select();
+      // Non-blocking reload so streak and entry list update in background.
+      loadEntries("").catch(() => {});
+      if (!wasLoggedToday) refreshQuote();
     } catch {
+      // Revert optimistic update on failure.
+      setSavedDraft(savedDraft);
+      setHasLoggedToday(wasLoggedToday);
+      setTodayEditMode(wasLoggedToday);
       showFlash("Couldn't save. Try again.");
     }
-  }, [draft, savedDraft, saveEntry, loadEntries, refreshQuote, showFlash]);
+  }, [draft, savedDraft, hasLoggedToday, saveEntry, loadEntries, refreshQuote, showFlash]);
 
   const onDeleteEntry = useCallback(
     async (day: string) => {
@@ -166,6 +175,7 @@ export default function Home() {
         const info = computeStreak(next.map((e) => e.day), todayISOUTC());
         setStreak(info);
         setHasLoggedToday(info.loggedToday);
+        if (!info.loggedToday) setTodayEditMode(false);
       }
 
       try {
@@ -385,26 +395,79 @@ export default function Home() {
         hidden={tab !== "today"}
       >
         <p className="overline today-date">{todayLabel}</p>
-        <div className="capture capture-row">
-          <input
-            ref={entryRef}
-            autoFocus
-            type="text"
-            placeholder="What happened today?"
-            autoComplete="off"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                onSaveDraft();
-              }
+
+        {/* ── Unlogged state: capture hero ── */}
+        {!hasLoggedToday && (
+          <div className="capture capture-row">
+            <input
+              ref={entryRef}
+              autoFocus
+              type="text"
+              placeholder={CAPTURE_PROMPT}
+              autoComplete="off"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSaveDraft();
+                }
+              }}
+            />
+            <span className={"capture-cue" + (showCue ? " show" : "")}>
+              ↵ to save
+            </span>
+          </div>
+        )}
+
+        {/* ── Logged state: entry preview (tap to edit) ── */}
+        {hasLoggedToday && !todayEditMode && (
+          <button
+            className="entry-preview-block"
+            type="button"
+            aria-label="Edit today's entry"
+            onClick={() => {
+              setTodayEditMode(true);
+              requestAnimationFrame(() => {
+                entryRef.current?.focus();
+                entryRef.current?.select();
+              });
             }}
-          />
-          <span className={"capture-cue" + (showCue ? " show" : "")}>
-            ↵ to save
-          </span>
-        </div>
+          >
+            <p className="entry-preview-text">{savedDraft}</p>
+            <span className="entry-preview-cta">
+              Continue
+              <ChevronRight size={13} aria-hidden="true" />
+            </span>
+          </button>
+        )}
+
+        {/* ── Logged edit mode: inline continue writing ── */}
+        {hasLoggedToday && todayEditMode && (
+          <div className="capture capture-row">
+            <input
+              ref={entryRef}
+              type="text"
+              placeholder={CAPTURE_PROMPT}
+              autoComplete="off"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSaveDraft();
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setTodayEditMode(false);
+                }
+              }}
+            />
+            <span className={"capture-cue" + (showCue ? " show" : "")}>
+              ↵ to save
+            </span>
+          </div>
+        )}
 
         <PastEntries entries={pastEntries} today={todayISOUTC()} />
 
