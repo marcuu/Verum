@@ -608,36 +608,43 @@ export default function Home() {
         <LifeCalendar entries={entries} />
       </div>
 
-      {/* ===== BOTTOM NAV ===== */}
-      <nav className="bottom-nav" aria-label="Sections">
-        <button
-          type="button"
-          className={"nav-tab" + (tab === "today" ? " active" : "")}
-          aria-current={tab === "today" ? "page" : undefined}
-          onClick={() => setTab("today")}
-        >
-          <CalendarDays size={20} />
-          <span>Today</span>
-        </button>
-        <button
-          type="button"
-          className={"nav-tab" + (tab === "journal" ? " active" : "")}
-          aria-current={tab === "journal" ? "page" : undefined}
-          onClick={() => setTab("journal")}
-        >
-          <List size={20} />
-          <span>Journal</span>
-        </button>
-        <button
-          type="button"
-          className={"nav-tab" + (tab === "life" ? " active" : "")}
-          aria-current={tab === "life" ? "page" : undefined}
-          onClick={() => setTab("life")}
-        >
-          <Grid3x3 size={20} />
-          <span>Life</span>
-        </button>
-      </nav>
+      {/* ===== BOTTOM NAV — liquid glass pill with sliding bubble ===== */}
+      {(() => {
+        const navItems: { id: Tab; label: string; Icon: typeof CalendarDays }[] = [
+          { id: "today", label: "Today", Icon: CalendarDays },
+          { id: "journal", label: "Journal", Icon: List },
+          { id: "life", label: "Life", Icon: Grid3x3 },
+        ];
+        const activeIndex = navItems.findIndex((it) => it.id === tab);
+        return (
+          <nav
+            className="bottom-nav"
+            aria-label="Sections"
+            style={{ "--nav-count": navItems.length } as React.CSSProperties}
+          >
+            <span
+              className="nav-bubble"
+              aria-hidden="true"
+              style={{
+                "--active-index": activeIndex,
+                opacity: activeIndex < 0 ? 0 : 1,
+              } as React.CSSProperties}
+            />
+            {navItems.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                className={"nav-tab" + (tab === id ? " active" : "")}
+                aria-current={tab === id ? "page" : undefined}
+                onClick={() => setTab(id)}
+              >
+                <Icon size={20} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+        );
+      })()}
 
       {flash && (
         <div className="flash" role="status">

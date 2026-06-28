@@ -695,6 +695,9 @@ li:focus-within .actions {
 
 /* ============ BOTTOM NAV — liquid glass pill ============ */
 .bottom-nav {
+  --nav-pad-x: 0.4rem;
+  --nav-pad-y: 0.4rem;
+  --nav-tab-w: clamp(4rem, 22vw, 5.25rem);
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
@@ -702,36 +705,99 @@ li:focus-within .actions {
   z-index: 40;
   display: inline-flex;
   align-items: center;
-  gap: clamp(0.25rem, 3vw, 1.5rem);
-  padding: 0.6rem 1.5rem;
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
-  backdrop-filter: blur(28px) saturate(1.8);
-  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  gap: 0;
+  padding: var(--nav-pad-y) var(--nav-pad-x);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg) 78%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 52%, transparent) 100%
+    );
+  backdrop-filter: blur(32px) saturate(1.9);
+  -webkit-backdrop-filter: blur(32px) saturate(1.9);
   border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
   border-radius: 999px;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 12px 40px rgba(0, 0, 0, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.04);
 }
 
 @media (prefers-color-scheme: dark) {
   .bottom-nav {
-    background: color-mix(in srgb, var(--bg) 50%, transparent);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--bg) 70%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 45%, transparent) 100%
+      );
     border-color: color-mix(in srgb, var(--ink) 14%, transparent);
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.35),
-      0 2px 8px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* The selected-page bubble — a glass capsule that slides under the active tab */
+.nav-bubble {
+  position: absolute;
+  top: var(--nav-pad-y);
+  bottom: var(--nav-pad-y);
+  left: var(--nav-pad-x);
+  width: var(--nav-tab-w);
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ink) 12%, transparent) 0%,
+      color-mix(in srgb, var(--ink) 6%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateX(calc(var(--active-index, 0) * var(--nav-tab-w)));
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.25s ease;
+  pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .nav-bubble {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ink) 20%, transparent) 0%,
+        color-mix(in srgb, var(--ink) 10%, transparent) 100%
+      );
+    border-color: color-mix(in srgb, var(--ink) 18%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-bubble {
+    transition: opacity 0.2s ease;
   }
 }
 
 .nav-tab {
+  position: relative;
+  z-index: 1;
+  width: var(--nav-tab-w);
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
-  padding: 0.35rem 0.6rem;
+  padding: 0.4rem 0;
   border: none;
   background: transparent;
   color: var(--muted);
@@ -739,16 +805,20 @@ li:focus-within .actions {
   font-size: 0.7rem;
   letter-spacing: 0.03em;
   white-space: nowrap;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .nav-tab:hover:not(.active) {
   color: var(--ink-2);
-  background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
 .nav-tab.active {
   color: var(--ink);
+}
+
+.nav-tab.active svg {
+  transform: translateY(-1px) scale(1.04);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ---- inline feedback: one quiet toast, replaces alert()/confirm() ---- */
