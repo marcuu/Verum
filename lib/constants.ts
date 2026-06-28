@@ -1,3 +1,6 @@
+// Shared between the capture UI and the daily reminder notification body.
+export const CAPTURE_PROMPT = "What happened today?";
+
 // Server-only config derived from environment variables.
 
 export const CORE_THRESHOLD = parseInt(
