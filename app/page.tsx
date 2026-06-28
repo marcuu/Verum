@@ -13,6 +13,7 @@ import PastEntries from "@/components/PastEntries";
 import LifeCalendar from "@/components/LifeCalendar";
 import StreakBanner from "@/components/StreakBanner";
 import NotificationSettings from "@/components/NotificationSettings";
+import MoonPhaseIcon from "@/components/MoonPhaseIcon";
 
 type FlashAction = { label: string; run: () => void | Promise<void> };
 type FlashState = { message: string; action?: FlashAction };
@@ -376,7 +377,7 @@ export default function Home() {
     <div className="wrap">
       <header>
         <div className="brand">
-          <div className="moon" aria-hidden="true" />
+          <MoonPhaseIcon />
           <h1>Verum</h1>
         </div>
         <div className="utility">

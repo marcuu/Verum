@@ -92,18 +92,6 @@ h1 {
   font-size: 0.85rem;
 }
 
-.moon {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--ink);
-  box-shadow: inset -7px 0 0 0 var(--bg);
-  /* Decorative only — must not read as a toggle or loading indicator. */
-  pointer-events: none;
-  user-select: none;
-  cursor: default;
-  flex-shrink: 0;
-}
 
 .utility {
   display: flex;
