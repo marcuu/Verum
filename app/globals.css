@@ -3,57 +3,41 @@
 /* ===== Verum design =====
    One spine, three zones (today → record → life), decreasing weight.
    Hierarchy carried by space and type weight, not boxes and borders.
-   One radius for controls, one accent (violet) used only as the reward colour.
-   The surface is paper, not pixels: warm off-white ink-on-paper in the light,
-   warm charcoal — ink by candlelight — in the dark. */
+   One radius for controls, one accent (violet) used only as the reward colour. */
 :root {
-  --ink: #1c1917; /* 16.6:1 on paper (WCAG AAA) */
-  --ink-2: #46413b;
-  --muted: #6d6862; /* 5.2:1 on paper (WCAG AA) */
-  --line: #eae7e0;
-  --bg: #faf9f6;
-  --surface: #faf9f6;
-  --accent: #1c1917;
-  --done: #e7e4ec;
-  --current: #1c1917;
-  --entry: #7c3aed; /* 5.4:1 on paper (WCAG AA) */
+  --ink: #111;
+  --ink-2: #444;
+  --muted: #757575; /* was #8a8a8a — lifted to 4.6:1 on white (WCAG AA) */
+  --line: #ededed;
+  --bg: #fff;
+  --surface: #fff;
+  --accent: #0f0f0f;
+  --done: #e8e8ef;
+  --current: #111;
+  --entry: #7c3aed; /* was #8b5cf6 — lifted to 5.7:1 on white (WCAG AA) */
   --label: 48px; /* life-calendar row label width */
   --cell-gap: 2px; /* life-calendar grid gap */
   --r: 10px; /* the single control radius */
   --s: 8px; /* spacing unit; layout rhythm is multiples of this */
-  /* ---- motion: one personality, shared by everything that moves ---- */
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dur-fast: 0.15s;
-  --dur-med: 0.3s;
-  --dur-slow: 0.7s;
-  /* ---- fluid type: the record's sizes breathe with the viewport ---- */
-  --text-capture: clamp(1.2rem, 1.05rem + 0.7vw, 1.35rem);
-  --text-moment: clamp(1.1rem, 1.02rem + 0.4vw, 1.2rem);
-  --text-date: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
-  --text-quote: clamp(1.02rem, 0.98rem + 0.2vw, 1.1rem);
-  /* The record is set in serif — a journal, not a SaaS. Controls stay sans.
-     Newsreader is self-hosted (next/font) so the journal reads the same on
-     every platform; the old stack survives as fallback. */
-  --font-serif: var(--font-newsreader, "Iowan Old Style"),
-    "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia,
-    serif;
+  /* The record is set in serif — a journal, not a SaaS. Controls stay sans. */
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino,
+    "Book Antiqua", Georgia, serif;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     Inter, "Helvetica Neue", Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #ece8e1; /* 15.6:1 on charcoal (WCAG AAA) */
-    --ink-2: #cec9c0;
-    --muted: #98918a; /* 6.1:1 on charcoal (WCAG AA) */
-    --line: #282420;
-    --bg: #12100d;
-    --surface: #171411;
-    --accent: #ece8e1;
-    --done: #221e28;
-    --current: #ece8e1;
-    --entry: #a78bfa; /* 7.0:1 on charcoal (WCAG AA) */
+    --ink: #eaeaea;
+    --ink-2: #cfcfcf;
+    --muted: #8f8f8f;
+    --line: #232323;
+    --bg: #0c0c0c;
+    --surface: #111;
+    --accent: #eaeaea;
+    --done: #1e1e24;
+    --current: #eaeaea;
+    --entry: #a78bfa;
   }
 }
 
@@ -68,15 +52,6 @@ html,
 body {
   background: var(--bg);
   color: var(--ink);
-}
-
-/* One focus voice for pointer-adjacent controls; text inputs keep their
-   underline focus, which is already a visible indicator. */
-button:focus-visible,
-a:focus-visible,
-summary:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--entry) 65%, transparent);
-  outline-offset: 2px;
 }
 
 .wrap {
@@ -243,7 +218,7 @@ button:disabled {
 .today-date {
   margin: 0 0 calc(var(--s) * 1.5);
   font-family: var(--font-serif);
-  font-size: var(--text-date);
+  font-size: 1.15rem;
   color: var(--ink-2);
   letter-spacing: 0.01em;
 }
@@ -260,7 +235,7 @@ button:disabled {
 
 .capture input {
   font-family: var(--font-serif);
-  font-size: var(--text-capture);
+  font-size: 1.35rem;
   line-height: 1.4;
   padding: 0.4rem 0;
 }
@@ -457,29 +432,13 @@ button:disabled {
 .moment {
   margin: 0 0 0.45rem;
   font-family: var(--font-serif);
-  font-size: var(--text-moment);
+  font-size: 1.2rem;
   line-height: 1.55;
   white-space: pre-wrap;
-  text-wrap: pretty;
-  animation: rise-in 0.45s var(--ease-out) both;
 }
 
 .moment:last-child {
   margin-bottom: 0;
-}
-
-/* one entrance gesture, reused wherever words arrive */
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .moment {
-    animation: none;
-  }
 }
 
 .moment-row {
@@ -488,6 +447,12 @@ button:disabled {
 
 .moment-row input {
   font-size: 1rem; /* subordinate to the day's text */
+}
+
+@media (max-width: 640px) {
+  .moment {
+    font-size: 1.1rem;
+  }
 }
 
 /* quote — the earned reward, lives in the today zone, borderless */
@@ -499,12 +464,10 @@ button:disabled {
 
 .qText {
   font-family: var(--font-serif);
-  font-size: var(--text-quote);
+  font-size: 1.1rem;
   line-height: 1.5;
   color: var(--ink-2);
   white-space: pre-wrap;
-  text-wrap: pretty;
-  hanging-punctuation: first; /* progressive: the opening quote hangs */
 }
 
 .qAuthor {
@@ -533,7 +496,7 @@ button:disabled {
 /* The reward, earned. A quiet arrival — the quote rises and settles, the
    actions fade in a beat later. Restraint over celebration. */
 .quoteBox--earned {
-  animation: quote-arrive var(--dur-slow) var(--ease-out) both;
+  animation: quote-arrive 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .quoteBox--earned .qText {
@@ -741,27 +704,6 @@ button:disabled {
   cursor: default;
 }
 
-/* ============ ZONE TRANSITIONS ============ */
-/* Sections toggle via [hidden] (display: none), so this entrance replays
-   each time a zone is revealed — a soft fade-and-drift that keeps pace with
-   the nav bubble's slide instead of a hard cut. */
-.zone {
-  animation: zone-in var(--dur-med) var(--ease-out) both;
-}
-
-@keyframes zone-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .zone {
-    animation: none;
-  }
-}
-
 /* ============ ZONE 2 — RECORD ============ */
 .record {
   margin-top: calc(var(--s) * 5);
@@ -778,13 +720,6 @@ button:disabled {
   margin-top: calc(var(--s) * 1.5);
 }
 
-/* how many pages the search found — quiet, factual */
-.record-count {
-  margin: calc(var(--s) * 1.25) 0 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
 ul {
   list-style: none;
   padding: 0;
@@ -795,43 +730,7 @@ li {
   display: flex;
   gap: 1.25rem;
   align-items: baseline;
-  padding: 0.9rem 0;
-}
-
-/* the record paginates like a book: month chapters, not table stripes */
-.record-group + .record-group {
-  margin-top: calc(var(--s) * 2);
-  padding-top: calc(var(--s) * 1.5);
-  border-top: 1px solid var(--line);
-}
-
-.record-month {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  margin: 0;
-  padding: 0.45rem 0 0.3rem;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  font-weight: 600;
-}
-
-.record-group ul {
-  margin-top: calc(var(--s) * 0.5);
-}
-
-/* staggered page-turn: rows settle in reading order, capped so long
-   records never make the reader wait */
-.record li {
-  animation: rise-in 0.35s var(--ease-out) both;
-  animation-delay: calc(min(var(--i, 0), 10) * 24ms);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .record li {
-    animation: none;
-  }
+  padding: 0.8rem 0;
 }
 
 .day {
@@ -846,7 +745,6 @@ li {
   font-family: var(--font-serif);
   line-height: 1.55;
   white-space: pre-wrap;
-  text-wrap: pretty;
   outline: none;
   border-radius: 6px;
   padding: 0.1rem 0.2rem;
@@ -854,34 +752,7 @@ li {
 }
 
 .text:focus {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--entry) 35%, transparent);
-}
-
-/* search matches — a soft wash of the reward colour */
-.text mark {
-  background: color-mix(in srgb, var(--entry) 18%, transparent);
-  color: inherit;
-  border-radius: 3px;
-  padding: 0 0.06em;
-}
-
-/* a first-run Journal explains what will grow here, in the record's voice */
-.record-empty {
-  padding: calc(var(--s) * 2) 0;
-}
-
-.record-empty-lede {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-  color: var(--ink-2);
-}
-
-.record-empty-sub {
-  margin: 0.5rem 0 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.5;
+  box-shadow: 0 0 0 2px rgba(127, 127, 127, 0.25);
 }
 
 .actions {
@@ -1119,34 +990,6 @@ li:focus-within .actions {
   padding-left: var(--label);
 }
 
-/* decade rule — the grid scans in chapters of ten years */
-.year-line.decade {
-  border-top: 1px solid var(--line);
-  padding-top: calc(var(--cell-gap) + 3px);
-  margin-top: calc(var(--cell-gap) + 3px);
-}
-
-/* The reveal: on the first visit, the weeks lived so far get counted —
-   a fast wave sweeping down the decades. Plays once (the component drops
-   the class after it finishes) and never under reduced motion. */
-.life--reveal .year-line {
-  animation: life-row-in 0.45s var(--ease-out) both;
-  animation-delay: calc(var(--row, 0) * 12ms);
-}
-
-@keyframes life-row-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .life--reveal .year-line {
-    animation: none;
-  }
-}
-
 .year-label {
   position: absolute;
   left: 0;
@@ -1191,22 +1034,12 @@ li:focus-within .actions {
 }
 
 /* Dot scales with the cell (inset %) instead of a fixed 4px, so it stays
-   proportional from desktop down to ~5px phone cells. Density steps shade
-   the week by how much was written — a rich month reads visibly rich. */
+   proportional from desktop down to ~5px phone cells. */
 .cell .dot {
   position: absolute;
   inset: 28%;
   border-radius: 50%;
   background: var(--entry);
-  opacity: 0.55;
-}
-
-.cell .dot-2 {
-  opacity: 0.78;
-}
-
-.cell .dot-3 {
-  opacity: 1;
 }
 
 /* ============ BOTTOM NAV — liquid glass pill ============ */
@@ -1278,7 +1111,7 @@ li:focus-within .actions {
     0 2px 8px rgba(0, 0, 0, 0.08);
   transform: translateX(calc(var(--active-index, 0) * var(--nav-tab-w)));
   transition:
-    transform 0.42s var(--ease-spring),
+    transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
     opacity 0.25s ease;
   pointer-events: none;
 }
@@ -1334,11 +1167,10 @@ li:focus-within .actions {
 
 .nav-tab.active svg {
   transform: translateY(-1px) scale(1.04);
-  transition: transform var(--dur-med) var(--ease-spring);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ---- inline feedback: one quiet toast, replaces alert()/confirm() ----
-   Speaks the bottom nav's glass language: blur, hairline, spring entrance. */
+/* ---- inline feedback: one quiet toast, replaces alert()/confirm() ---- */
 .flash {
   position: fixed;
   left: 50%;
@@ -1348,36 +1180,13 @@ li:focus-within .actions {
   align-items: center;
   gap: 0.9rem;
   max-width: calc(100vw - 2rem);
-  padding: 0.6rem 1.05rem;
-  background: color-mix(in srgb, var(--ink) 88%, transparent);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  padding: 0.6rem 0.95rem;
+  background: var(--ink);
   color: var(--bg);
-  border: 1px solid color-mix(in srgb, var(--bg) 16%, transparent);
-  border-radius: 999px;
+  border-radius: var(--r);
   font-size: 0.9rem;
-  box-shadow:
-    0 8px 28px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   z-index: 50;
-  animation: flash-in 0.35s var(--ease-spring) both;
-}
-
-@keyframes flash-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 10px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .flash {
-    animation: none;
-  }
 }
 
 .flash button {
@@ -1395,43 +1204,18 @@ li:focus-within .actions {
   opacity: 1;
 }
 
-/* ---- login: the cover of the book ---- */
+/* ---- login ---- */
 .login {
   max-width: 360px;
-  margin: 24vh auto 0;
+  margin: 18vh auto 0;
   padding: 0 1.25rem;
-}
-
-.login-cover {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.9rem;
-}
-
-.login-cover h1 {
-  font-family: var(--font-serif);
-  font-size: 2.1rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-
-.login-tag {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--muted);
-  text-wrap: balance;
 }
 
 .login-form {
   display: flex;
   align-items: flex-end;
   gap: 0.75rem;
-  margin-top: 2.25rem;
+  margin-top: 1.5rem;
 }
 
 .login-form input {
@@ -1467,6 +1251,10 @@ li:focus-within .actions {
     margin-top: calc(var(--s) * 6);
   }
 
+  .capture input {
+    font-size: 1.2rem;
+  }
+
   /* ~44px tap targets for the icon controls */
   .utility button.ghost,
   .record-head button.ghost {
@@ -1493,7 +1281,6 @@ li:focus-within .actions {
   grid-template-columns: minmax(9rem, 1fr) minmax(10rem, 1.4fr) auto;
   grid-template-areas:
     "copy input actions"
-    "entries entries entries"
     ". error error";
   align-items: center;
   gap: 0.65rem;
@@ -1502,34 +1289,6 @@ li:focus-within .actions {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: color-mix(in srgb, var(--surface) 94%, var(--ink) 6%);
-}
-
-/* what the week held — the entry itself, peeked in place */
-.marker-week-entries {
-  grid-area: entries;
-  margin: 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--line);
-}
-
-.marker-week-entries p {
-  margin: 0 0 0.3rem;
-  font-family: var(--font-serif);
-  font-size: 0.88rem;
-  line-height: 1.45;
-  color: var(--ink-2);
-}
-
-.marker-week-entries p:last-child {
-  margin-bottom: 0;
-}
-
-.marker-week-entries .marker-week-day {
-  font-family: inherit;
-  font-size: 0.74rem;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  margin-right: 0.45rem;
 }
 
 .marker-editor-copy {
@@ -1626,7 +1385,6 @@ li:focus-within .actions {
       "copy"
       "input"
       "actions"
-      "entries"
       "error";
     margin-left: var(--label);
   }

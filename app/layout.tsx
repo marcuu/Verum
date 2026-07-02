@@ -1,27 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
-
-// The record's serif, self-hosted so it renders identically on every
-// platform (the old Iowan Old Style/Palatino stack was Apple-only) and
-// keeps working offline in the installed PWA.
-const newsreader = localFont({
-  src: [
-    {
-      path: "./fonts/newsreader-latin.woff2",
-      weight: "200 800",
-      style: "normal",
-    },
-    {
-      path: "./fonts/newsreader-latin-italic.woff2",
-      weight: "200 800",
-      style: "italic",
-    },
-  ],
-  variable: "--font-newsreader",
-  display: "swap",
-  fallback: ["Iowan Old Style", "Palatino Linotype", "Georgia", "serif"],
-});
 
 export const metadata: Metadata = {
   title: "Verum",
@@ -46,8 +24,8 @@ export const viewport: Viewport = {
   // Match the app's actual paper: the browser/PWA chrome should read as part
   // of the page in both schemes, not a fixed dark band over a white journal.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf9f6" },
-    { media: "(prefers-color-scheme: dark)", color: "#12100d" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0c0c" },
   ],
 };
 
@@ -57,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={newsreader.variable}>
+    <html lang="en">
       <body>{children}</body>
     </html>
   );
