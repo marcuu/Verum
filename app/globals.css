@@ -19,6 +19,9 @@
   --cell-gap: 2px; /* life-calendar grid gap */
   --r: 10px; /* the single control radius */
   --s: 8px; /* spacing unit; layout rhythm is multiples of this */
+  /* The record is set in serif — a journal, not a SaaS. Controls stay sans. */
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino,
+    "Book Antiqua", Georgia, serif;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     Inter, "Helvetica Neue", Arial, sans-serif;
 }
@@ -213,13 +216,60 @@ button:disabled {
 }
 
 .today-date {
-  margin-bottom: calc(var(--s) * 1.5);
+  margin: 0 0 calc(var(--s) * 1.5);
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+
+/* the greeting — the record speaks first, quietly */
+.greeting {
+  margin: 0 0 calc(var(--s) * 2.5);
+  color: var(--muted);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 .capture input {
+  font-family: var(--font-serif);
   font-size: 1.35rem;
   line-height: 1.4;
   padding: 0.4rem 0;
+}
+
+/* full-day edit: a real page, newlines intact */
+.capture-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.capture-textarea {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0.4rem 0;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  line-height: 1.55;
+  resize: none;
+  field-sizing: content;
+}
+
+.capture-textarea:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+
+.capture-edit .capture-cue {
+  align-self: flex-end;
 }
 
 .capture-row {
@@ -354,61 +404,54 @@ button:disabled {
   padding: 0 0 0.7rem;
   margin: 0;
   color: var(--ink-2);
+  font-family: var(--font-serif);
   font-size: 0.95rem;
   white-space: pre-wrap;
 }
 
-/* entry preview — logged state hero; full-width tappable block */
-.entry-preview-block {
+/* the day as its moments — the logged state reads like a page */
+.moments-block {
   display: block;
-  width: 100%;
-  text-align: left;
   border: none;
   border-radius: var(--r);
   background: transparent;
   color: var(--ink);
-  padding: 0.4rem 0;
+  text-align: left;
   cursor: pointer;
   transition: background 0.12s ease;
   margin: 0 calc(-1 * var(--r));
-  padding-left: var(--r);
-  padding-right: var(--r);
+  padding: 0.4rem var(--r);
   width: calc(100% + 2 * var(--r));
 }
 
-.entry-preview-block:hover,
-.entry-preview-block:focus-visible {
+.moments-block:hover,
+.moments-block:focus-visible {
   background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
-.entry-preview-block:active {
-  background: color-mix(in srgb, var(--ink) 10%, transparent);
+.moment {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
-.entry-preview-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 1.35rem;
-  line-height: 1.4;
-  margin: 0;
-  padding: 0;
+.moment:last-child {
+  margin-bottom: 0;
 }
 
-.entry-preview-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  margin-top: 0.45rem;
-  color: var(--muted);
-  font-size: 0.78rem;
+.moment-row {
+  margin-top: calc(var(--s) * 1.5);
+}
+
+.moment-row input {
+  font-size: 1rem; /* subordinate to the day's text */
 }
 
 @media (max-width: 640px) {
-  .entry-preview-text {
-    font-size: 1.2rem;
+  .moment {
+    font-size: 1.1rem;
   }
 }
 
@@ -420,6 +463,7 @@ button:disabled {
 }
 
 .qText {
+  font-family: var(--font-serif);
   font-size: 1.1rem;
   line-height: 1.5;
   color: var(--ink-2);
@@ -698,7 +742,9 @@ li {
 
 .text {
   flex: 1;
+  font-family: var(--font-serif);
   line-height: 1.55;
+  white-space: pre-wrap;
   outline: none;
   border-radius: 6px;
   padding: 0.1rem 0.2rem;
@@ -1459,6 +1505,7 @@ li:focus-within .actions {
 .year-entry p {
   margin: 0.45rem 0 0;
   color: var(--ink-2);
+  font-family: var(--font-serif);
   font-size: 1rem;
   line-height: 1.55;
   white-space: pre-wrap;
