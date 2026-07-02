@@ -471,6 +471,118 @@ button:disabled {
   }
 }
 
+/* ============ QUOTE COMPOSER (add a quote) ============ */
+.composer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: composer-fade 0.15s ease;
+}
+
+@keyframes composer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.composer {
+  width: 100%;
+  max-width: 30rem;
+  padding: 1.1rem 1.15rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+}
+
+.composer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.composer-head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.composer-text,
+.composer-author {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.composer-text {
+  resize: vertical;
+  line-height: 1.5;
+  margin-bottom: 0.6rem;
+}
+
+.composer-error {
+  margin-top: 0.55rem;
+  color: #c0392b;
+  font-size: 0.82rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .composer-error {
+    color: #e74c3c;
+  }
+}
+
+.composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.composer-cancel,
+.composer-save {
+  min-height: 2rem;
+  padding: 0 0.95rem;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.composer-cancel {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+
+.composer-cancel:hover {
+  color: var(--ink);
+}
+
+.composer-save {
+  border: 1px solid var(--entry);
+  background: var(--entry);
+  color: #fff;
+  font-weight: 500;
+}
+
+.composer-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* ============ ZONE 2 — RECORD ============ */
 .record {
   margin-top: calc(var(--s) * 5);
