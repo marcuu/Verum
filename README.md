@@ -14,6 +14,16 @@ Personal daily journal + curated quotes, with a "life calendar" visualisation.
 - **Life calendar** — 52 weeks per age-year, marking past weeks, the current week, and weeks that have an entry.
 - **Reminders (PWA)** — installable as a Progressive Web App with Web Push. One calm daily reminder ("What happened today?") if the day hasn't been logged yet.
 
+### Day semantics
+
+A journal "day" is the day the owner lived, not the UTC date. The browser
+saves entries against the **device's local calendar date**, and server routes
+that need "today" (daily quote pick, streak, anniversaries, entry-day
+fallback) compute it in `APP_TIMEZONE` (default `Europe/London` — the same
+timezone notification scheduling already used). Timestamps (`created_at`,
+`updated_at`) remain UTC. Existing `day` values are untouched; the change is
+prospective only.
+
 ## Architecture
 
 ```
@@ -114,6 +124,7 @@ Get the Supabase keys from **Dashboard → Project Settings → API**. The
 | `JOURNAL_ACCESS_TOKEN` | yes | Shared login token — use a long random value |
 | `SESSION_SECRET` | no | **Secret** — signs session cookies; rotate to log out everywhere (falls back to the access token) |
 | `JOURNAL_PUBLIC_READ` | no | `true` to allow anonymous reads (default `false`; export + notification settings stay private) |
+| `APP_TIMEZONE` | no | IANA timezone for server-side "today" (default `Europe/London`) |
 | `QUOTES_CORE_THRESHOLD` | no | Default `3` |
 | `QUOTES_AVOID_DAYS` | no | Default `14` |
 | `NEXT_PUBLIC_DOB` | no | Life calendar DOB, default `1993-12-19` |
