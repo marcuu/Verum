@@ -1511,14 +1511,91 @@ li:focus-within .actions {
   white-space: pre-wrap;
 }
 
+/* the volume's bookends exist only on paper */
+.volume-title,
+.volume-colophon {
+  display: none;
+}
+
 /* print = the annual volume: ink on paper, chrome gone */
 @media print {
+  @page {
+    margin: 22mm 20mm;
+  }
+
   .year-review {
     margin-top: 0;
+    max-width: none;
+    padding: 0;
   }
 
   .year-head {
     display: none;
+  }
+
+  /* title page — the volume opens like a book */
+  .volume-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 88vh;
+    page-break-after: always;
+    font-family: var(--font-serif);
+    color: #000;
+  }
+
+  .volume-brand {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .volume-age {
+    margin: 1.2rem 0 0;
+    font-size: 2.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .volume-dates {
+    margin: 0.8rem 0 0;
+    font-size: 1rem;
+    font-style: italic;
+  }
+
+  /* the screen heading gives way to the title page */
+  .year-review .overline,
+  .year-review .year-title,
+  .year-review .year-range {
+    display: none;
+  }
+
+  /* colophon — the volume closes against the clock */
+  .volume-colophon {
+    display: block;
+    margin-top: 4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #ccc;
+    page-break-inside: avoid;
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    text-align: center;
+    color: #000;
+  }
+
+  .volume-colophon p {
+    margin: 0;
+  }
+
+  .volume-imprint {
+    margin-top: 0.9rem !important;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: #444;
   }
 
   .year-review,

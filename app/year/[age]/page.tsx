@@ -148,6 +148,17 @@ export default function YearReview() {
         </button>
       </header>
 
+      {/* Print-only title page: the volume opens like a book. */}
+      {view && (
+        <div className="volume-title" aria-hidden="true">
+          <p className="volume-brand">Verum</p>
+          <p className="volume-age">Age {age}</p>
+          <p className="volume-dates">
+            {shortDate(view.start)} — {shortDate(view.end)}
+          </p>
+        </div>
+      )}
+
       <p className="overline">Year in review</p>
       <h1 className="year-title">Age {age}</h1>
       {view && (
@@ -228,6 +239,33 @@ export default function YearReview() {
               ))}
             </section>
           )}
+
+          {/* Print-only colophon: the volume closes against the clock. */}
+          <div className="volume-colophon" aria-hidden="true">
+            <p>
+              {view.weeksLived} of {view.weeks.length} weeks of age {age} lived
+              · {view.yearEntries.length}{" "}
+              {view.yearEntries.length === 1 ? "entry" : "entries"} ·{" "}
+              {view.yearMarkers.length}{" "}
+              {view.yearMarkers.length === 1 ? "marker" : "markers"}
+            </p>
+            <p>
+              ≈{" "}
+              {Math.max(
+                0,
+                LIFE_YEARS * 52 - (view.currentIdx + 1)
+              ).toLocaleString()}{" "}
+              weeks remained.
+            </p>
+            <p className="volume-imprint">
+              Set from the Verum record ·{" "}
+              {new Date().toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
         </>
       )}
     </div>
