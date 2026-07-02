@@ -1,5 +1,5 @@
-// Local date/time helpers for notification scheduling only. The journal date
-// model (UTC, see lib/dates.ts) is intentionally left untouched.
+// Local date/time helpers for notification scheduling. The journal day model
+// also runs on local days now (see lib/dates.ts localDay).
 
 export type LocalParts = {
   isoDay: string;

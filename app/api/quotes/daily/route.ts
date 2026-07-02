@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { utcDay } from "@/lib/dates";
+import { localDay } from "@/lib/dates";
 import { CORE_THRESHOLD, AVOID_DAYS, isCore } from "@/lib/constants";
 import { serverError } from "@/lib/apiError";
 
@@ -13,7 +13,7 @@ export async function GET() {
   const unauth = await requireAuth("GET");
   if (unauth) return unauth;
 
-  const day = utcDay();
+  const day = localDay();
   const db = getSupabaseAdmin();
 
   const { data, error } = await db.rpc("verum_pick_daily_quote", {

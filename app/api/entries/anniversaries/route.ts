@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { utcDay } from "@/lib/dates";
+import { localDay } from "@/lib/dates";
 import { T_ENTRIES } from "@/lib/constants";
 import { serverError } from "@/lib/apiError";
 
@@ -16,7 +16,7 @@ export async function GET() {
   const unauth = await requireAuth("GET");
   if (unauth) return unauth;
 
-  const today = utcDay(); // YYYY-MM-DD
+  const today = localDay(); // YYYY-MM-DD
   const monthDay = today.slice(5); // MM-DD
   const db = getSupabaseAdmin();
 

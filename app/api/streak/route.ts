@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { utcDay } from "@/lib/dates";
+import { localDay } from "@/lib/dates";
 import { T_ENTRIES } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
 import { serverError } from "@/lib/apiError";
@@ -27,5 +27,5 @@ export async function GET() {
   }
 
   const days = (data ?? []).map((r) => r.day as string);
-  return NextResponse.json(computeStreak(days, utcDay()));
+  return NextResponse.json(computeStreak(days, localDay()));
 }
