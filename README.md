@@ -9,7 +9,7 @@ Personal daily journal + curated quotes, with a "life calendar" visualisation.
 
 ## Features
 
-- **Journal** — one quick-capture entry per day, inline editing, full-text search, JSON export.
+- **Journal** — one quick-capture entry per day, inline editing, full-text search, JSON + Markdown export.
 - **Quotes** — a daily pick with thumbs up/down voting; quotes crossing the score threshold become "core".
 - **Life calendar** — 52 weeks per age-year, marking past weeks, the current week, and weeks that have an entry.
 - **Reminders (PWA)** — installable as a Progressive Web App with Web Push. One calm daily reminder ("What happened today?") if the day hasn't been logged yet.
@@ -34,7 +34,7 @@ app/
     login | logout         Auth cookie endpoints
     entries/               GET list/search, POST upsert
     entries/[day]/         GET one, DELETE
-    entries/export/        GET all as JSON
+    entries/export/        GET all as JSON (?format=markdown for the archive)
     life-markers/          GET list, POST upsert
     life-markers/[week]/   DELETE
     quotes/                GET list, POST create

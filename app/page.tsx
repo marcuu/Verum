@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
+import { Download, FileText, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
 import { api, todayISO, yesterdayISO } from "@/lib/client";
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
@@ -257,6 +257,21 @@ export default function Home() {
     }
   }, [showFlash]);
 
+  // The archive a person opens in forty years: plain Markdown, year chapters.
+  const onExportMarkdown = useCallback(async () => {
+    try {
+      const md = await api<string>("/entries/export?format=markdown");
+      const blob = new Blob([md], { type: "text/markdown" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "verum-journal.md";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      showFlash("Export failed. Try again.");
+    }
+  }, [showFlash]);
+
   // Notification deep links: ?tab=… selects a section; ?export=1 starts an
   // export. Params are stripped afterwards so a reload doesn't repeat them.
   useEffect(() => {
@@ -471,7 +486,16 @@ export default function Home() {
                   onClick={() => { setHeaderMenuOpen(false); onExport(); }}
                 >
                   <Download size={15} aria-hidden="true" />
-                  Export entries
+                  Export (JSON)
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="headerMenuItem"
+                  onClick={() => { setHeaderMenuOpen(false); onExportMarkdown(); }}
+                >
+                  <FileText size={15} aria-hidden="true" />
+                  Export (Markdown)
                 </button>
                 <button
                   type="button"
