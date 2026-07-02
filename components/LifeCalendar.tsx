@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { api } from "@/lib/client";
+import { api, todayISO } from "@/lib/client";
+import { lastClosedAge } from "@/lib/lifeWeeks";
 import type { Entry, LifeMarker } from "@/lib/types";
 
 // Hardcoded life settings (overridable via NEXT_PUBLIC_* env).
@@ -168,6 +169,7 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
   const pct = total ? ((elapsed / total) * 100).toFixed(1) : "0.0";
   const remaining = Math.max(0, total - elapsed);
   const yearsLeft = Math.round(remaining / 52);
+  const closedAge = lastClosedAge(DOB_FIXED, todayISO());
   const selectedMarker =
     selectedWeek === null ? null : markers[String(selectedWeek)] ?? null;
   const selectedBin =
@@ -270,6 +272,14 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
       </div>
       <div className="life-stats">
         {elapsed} of {total} weeks lived · {pct}% · {markerCount(markers)} markers
+        {closedAge !== null && (
+          <>
+            {" · "}
+            <a className="life-review-link" href={`/year/${closedAge}`}>
+              age {closedAge} in review
+            </a>
+          </>
+        )}
       </div>
       {selectedWeek !== null && selectedBin && (
         <div className="marker-editor" aria-label="Life marker editor">

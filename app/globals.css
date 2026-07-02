@@ -1347,3 +1347,159 @@ li:focus-within .actions {
     flex-wrap: wrap;
   }
 }
+
+/* ============ YEAR IN REVIEW — the birthday artifact ============ */
+.year-review {
+  margin-top: 3.5rem;
+}
+
+.year-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: calc(var(--s) * 3);
+}
+
+.year-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.year-back:hover {
+  color: var(--ink);
+}
+
+.year-title {
+  margin: 0.35rem 0 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.year-range {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* the weeks as lived — one wrapping strip of true weeks, no compression */
+.year-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cell-gap);
+  margin-top: calc(var(--s) * 3);
+}
+
+.year-strip .cell {
+  width: 14px;
+  flex: none;
+  cursor: default;
+}
+
+.year-stats {
+  margin: calc(var(--s) * 1.5) 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.year-markers {
+  margin-top: calc(var(--s) * 2.5);
+}
+
+.year-markers ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.year-markers li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.3rem 0;
+  color: var(--ink-2);
+  font-size: 0.92rem;
+}
+
+.year-marker-dot {
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--marker-accent, var(--entry));
+  align-self: center;
+}
+
+/* the entries, book-style */
+.year-entries {
+  margin-top: calc(var(--s) * 4);
+}
+
+.year-entry {
+  padding: calc(var(--s) * 2) 0;
+  border-top: 1px solid var(--line);
+}
+
+.year-entry:first-child {
+  border-top: none;
+}
+
+.year-entry h2 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.year-entry p {
+  margin: 0.45rem 0 0;
+  color: var(--ink-2);
+  font-size: 1rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+/* print = the annual volume: ink on paper, chrome gone */
+@media print {
+  .year-review {
+    margin-top: 0;
+  }
+
+  .year-head {
+    display: none;
+  }
+
+  .year-review,
+  .year-review .year-entry p,
+  .year-review .year-markers li {
+    color: #000;
+  }
+
+  .year-strip .cell {
+    border-color: #bbb;
+  }
+
+  .year-strip .cell.done {
+    background: #e5e5e5;
+  }
+
+  .year-entry {
+    break-inside: avoid;
+    border-top-color: #ddd;
+  }
+}
+
+.life-review-link {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.life-review-link:hover {
+  color: var(--ink);
+}
