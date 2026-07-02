@@ -8,11 +8,18 @@ self.addEventListener("push", (event) => {
   }
 
   const title = data.title || "Verum";
+  // Priority alerts pin on screen until acknowledged and vibrate on delivery,
+  // instead of quietly auto-dismissing. Driven by the payload flag the server
+  // sets for time-sensitive notification types.
+  const priority = data.requireInteraction === true;
   const options = {
     body: data.body || "Open Verum",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     tag: data.tag || "verum",
+    requireInteraction: priority,
+    renotify: priority,
+    vibrate: priority ? [200, 100, 200] : undefined,
     data: {
       url: data.url || "/",
       type: data.type || "generic",
