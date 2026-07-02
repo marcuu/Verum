@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings } from "lucide-react";
+import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
 import { api, todayISOUTC } from "@/lib/client";
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
@@ -13,6 +13,7 @@ import PastEntries from "@/components/PastEntries";
 import LifeCalendar from "@/components/LifeCalendar";
 import StreakBanner from "@/components/StreakBanner";
 import NotificationSettings from "@/components/NotificationSettings";
+import QuoteComposer from "@/components/QuoteComposer";
 import MoonPhaseIcon from "@/components/MoonPhaseIcon";
 
 type FlashAction = { label: string; run: () => void | Promise<void> };
@@ -38,6 +39,7 @@ export default function Home() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const [flash, setFlash] = useState<FlashState | null>(null);
 
@@ -327,6 +329,13 @@ export default function Home() {
     }
   }, [quote, refreshQuote, showFlash]);
 
+  const onQuoteAdded = useCallback(() => {
+    showFlash("Quote added.");
+    // If today's logged but the reward is empty (a fresh pool), the just-added
+    // quote can now fill it — so ask for today's pick again.
+    if (hasLoggedToday && !quote) refreshQuote();
+  }, [showFlash, hasLoggedToday, quote, refreshQuote]);
+
   // ---- search reveal ----
   const openSearch = useCallback(() => {
     setTab("journal");
@@ -395,6 +404,15 @@ export default function Home() {
             </button>
             {headerMenuOpen && (
               <div className="headerMenu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="headerMenuItem"
+                  onClick={() => { setHeaderMenuOpen(false); setComposerOpen(true); }}
+                >
+                  <QuoteIcon size={15} aria-hidden="true" />
+                  Add a quote
+                </button>
                 <button
                   type="button"
                   role="menuitem"
@@ -520,6 +538,7 @@ export default function Home() {
             busy={quoteBusy}
             onVote={onVote}
             onDelete={onDeleteQuote}
+            onAdd={() => setComposerOpen(true)}
           />
         )}
       </section>
@@ -645,6 +664,12 @@ export default function Home() {
           </nav>
         );
       })()}
+
+      <QuoteComposer
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        onAdded={onQuoteAdded}
+      />
 
       {flash && (
         <div className="flash" role="status">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { MoreHorizontal, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import type { Quote } from "@/lib/types";
 
 export default function QuoteBox({
@@ -10,12 +10,14 @@ export default function QuoteBox({
   busy,
   onVote,
   onDelete,
+  onAdd,
 }: {
   quote: Quote | null;
   loading: boolean;
   busy: boolean;
   onVote: (delta: 1 | -1) => void;
   onDelete: () => void;
+  onAdd: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -82,6 +84,18 @@ export default function QuoteBox({
           </button>
           {menuOpen && (
             <div className="qMenu" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="qMenuItem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onAdd();
+                }}
+              >
+                <Plus size={14} aria-hidden="true" />
+                Add a quote
+              </button>
               <button
                 type="button"
                 role="menuitem"
