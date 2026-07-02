@@ -48,12 +48,13 @@ function LoginForm() {
 
   return (
     <main className="login">
-      <div className="brand">
+      {/* The cover of the book: mark, title, one italic line. */}
+      <div className="login-cover">
         <MoonPhaseIcon />
-        <div>
-          <h1>Verum</h1>
-          <div className="sub">daily journal</div>
-        </div>
+        <h1>Verum</h1>
+        <p className="login-tag">
+          An honest daily record, set against the weeks you have left.
+        </p>
       </div>
 
       <form onSubmit={onSubmit} className="login-form">

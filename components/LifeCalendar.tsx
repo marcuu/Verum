@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { api, todayISO } from "@/lib/client";
 import { lastClosedAge } from "@/lib/lifeWeeks";
+import { excerpt } from "@/lib/notifications/reflection";
 import type { Entry, LifeMarker } from "@/lib/types";
 
 // Hardcoded life settings (overridable via NEXT_PUBLIC_* env).
@@ -47,6 +48,7 @@ type Bin = {
   hasPast: boolean;
   isCurrent: boolean;
   hasEntry: boolean;
+  entryCount: number;
   weeks: number[];
   absoluteWeeks: number[];
   weekStart: Date | null;
@@ -62,17 +64,28 @@ type Row = { age: number; bins: Bin[] };
  * - Merge collisions in a cell; mark "double" when multiple weeks share a cell.
  * - Past/current/entry flags are ORed across merged weeks.
  */
-function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number } {
+function build(entries: Entry[]): {
+  rows: Row[];
+  elapsed: number;
+  total: number;
+  weekEntries: Map<number, Entry[]>;
+} {
   const dobDate = parseISODateUTC(DOB_FIXED);
   const dobMonday = mondayOfUTC(dobDate);
   const years = EXP_FIXED;
 
-  const entryWeeks = new Set<number>();
+  // Entries grouped by absolute week: the count shades the cell (a rich
+  // week reads visibly rich) and the texts feed the week-peek panel.
+  const weekEntries = new Map<number, Entry[]>();
   for (const e of entries) {
     try {
       const m = mondayOfUTC(parseISODateUTC(e.day));
       const idx = Math.floor(daysBetween(dobMonday, m) / 7);
-      if (idx >= 0) entryWeeks.add(idx);
+      if (idx >= 0) {
+        const list = weekEntries.get(idx);
+        if (list) list.push(e);
+        else weekEntries.set(idx, [e]);
+      }
     } catch {
       /* ignore malformed day */
     }
@@ -108,6 +121,7 @@ function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number 
       hasPast: false,
       isCurrent: false,
       hasEntry: false,
+      entryCount: 0,
       weeks: [],
       absoluteWeeks: [],
       weekStart: null,
@@ -132,8 +146,9 @@ function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number 
         const abs = globalWeekIdx + i;
         if (abs < currentIdx) b.hasPast = true;
         if (abs === currentIdx) b.isCurrent = true;
-        if (entryWeeks.has(abs)) b.hasEntry = true;
+        b.entryCount += weekEntries.get(abs)?.length ?? 0;
       }
+      b.hasEntry = b.entryCount > 0;
     }
 
     rows.push({ age, bins });
@@ -142,7 +157,7 @@ function build(entries: Entry[]): { rows: Row[]; elapsed: number; total: number 
 
   const total = globalWeekIdx;
   const elapsed = Math.min(total, currentIdx + 1);
-  return { rows, elapsed, total };
+  return { rows, elapsed, total, weekEntries };
 }
 
 function markerCount(markers: LifeMarkerMap): number {
@@ -159,13 +174,26 @@ function formatUTCDate(d: Date | null): string {
   return d ? d.toISOString().slice(0, 10) : "";
 }
 
-export default function LifeCalendar({ entries }: { entries: Entry[] }) {
-  const { rows, elapsed, total } = useMemo(() => build(entries), [entries]);
+export default function LifeCalendar({
+  entries,
+  active = true,
+}: {
+  entries: Entry[];
+  active?: boolean;
+}) {
+  const { rows, elapsed, total, weekEntries } = useMemo(
+    () => build(entries),
+    [entries]
+  );
   const [markers, setMarkers] = useState<LifeMarkerMap>({});
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [draftLabel, setDraftLabel] = useState("");
   const [draftAccent, setDraftAccent] = useState<string>(MARKER_ACCENTS[0].value);
   const [markerError, setMarkerError] = useState("");
+  // The reveal — the weeks lived so far get counted — plays once, on the
+  // first time the calendar is actually looked at, and never under
+  // reduced motion.
+  const [reveal, setReveal] = useState<"idle" | "playing" | "done">("idle");
   const pct = total ? ((elapsed / total) * 100).toFixed(1) : "0.0";
   const remaining = Math.max(0, total - elapsed);
   const yearsLeft = Math.round(remaining / 52);
@@ -178,6 +206,22 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
       : rows
           .flatMap((row) => row.bins)
           .find((bin) => bin.absoluteWeeks.includes(selectedWeek)) ?? null;
+  const selectedEntries = selectedBin
+    ? selectedBin.absoluteWeeks.flatMap((week) => weekEntries.get(week) ?? [])
+    : [];
+
+  useEffect(() => {
+    if (!active || reveal !== "idle") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setReveal("done");
+      return;
+    }
+    setReveal("playing");
+    // Rows animate over ~1.3s (108 rows × 12ms) plus the last row's 0.45s;
+    // drop the class once the wave has fully passed so revisits are instant.
+    const t = setTimeout(() => setReveal("done"), 2400);
+    return () => clearTimeout(t);
+  }, [active, reveal]);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,7 +289,10 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
   }
 
   return (
-    <section className="life" aria-labelledby="lifeTitle">
+    <section
+      className={"life" + (reveal === "playing" ? " life--reveal" : "")}
+      aria-labelledby="lifeTitle"
+    >
       <h3 id="lifeTitle">Life</h3>
       <style>{`
         @keyframes life-breathe {
@@ -321,12 +368,28 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
               </button>
             )}
           </div>
+          {selectedEntries.length > 0 && (
+            <div className="marker-week-entries" aria-label="Entries this week">
+              {selectedEntries.slice(0, 3).map((e) => (
+                <p key={e.day}>
+                  <span className="marker-week-day">{e.day}</span>
+                  {excerpt(e.text, 110)}
+                </p>
+              ))}
+            </div>
+          )}
           {markerError && <div className="marker-error">{markerError}</div>}
         </div>
       )}
       <div>
         {rows.map(({ age, bins }) => (
-          <div className="year-line" key={age}>
+          <div
+            className={
+              "year-line" + (age > 0 && age % 10 === 0 ? " decade" : "")
+            }
+            style={{ "--row": age } as CSSProperties}
+            key={age}
+          >
             <div className={"year-label" + (age % 10 === 0 ? " bold" : "")}>
               {age % 10 === 0 ? `Age ${age}` : ""}
             </div>
@@ -346,6 +409,9 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
                   ? `${formatUTCDate(b.weekStart)} → ${formatUTCDate(b.weekEnd)} (Age ${age})`
                   : `Age ${age}`;
               const title = marker ? `${dateTitle} · Marker: ${marker.label}` : dateTitle;
+              // Density steps: one entry, a few, a full week of writing.
+              const density =
+                b.entryCount >= 4 ? 3 : b.entryCount >= 2 ? 2 : b.entryCount;
               return (
                 <button
                   aria-label={marker ? `Edit marker: ${marker.label}` : `Add marker for ${dateTitle}`}
@@ -356,7 +422,11 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
                   title={title}
                   type="button"
                 >
-                  {b.hasEntry && <span className="dot" />}
+                  {density > 0 && (
+                    <span
+                      className={"dot" + (density > 1 ? ` dot-${density}` : "")}
+                    />
+                  )}
                 </button>
               );
             })}

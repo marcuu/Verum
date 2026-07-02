@@ -28,6 +28,37 @@ type FlashState = { message: string; action?: FlashAction };
 
 type Tab = "today" | "journal" | "life" | "reminders";
 
+// The record paginates like a book: consecutive entries gather into
+// month chapters. `index` keeps the global position for the staggered
+// entrance, which reads across chapter boundaries.
+type EntryGroup = {
+  key: string;
+  label: string;
+  entries: { entry: Entry; index: number }[];
+};
+
+function groupEntriesByMonth(entries: Entry[]): EntryGroup[] {
+  const groups: EntryGroup[] = [];
+  entries.forEach((entry, index) => {
+    const key = entry.day.slice(0, 7);
+    let group = groups[groups.length - 1];
+    if (!group || group.key !== key) {
+      group = {
+        key,
+        label: new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", {
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC",
+        }),
+        entries: [],
+      };
+      groups.push(group);
+    }
+    group.entries.push({ entry, index });
+  });
+  return groups;
+}
+
 export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -630,7 +661,7 @@ export default function Home() {
 
       {/* ===== ZONE 1 — TODAY ===== */}
       <section
-        className={"today" + (hasLoggedToday ? " today--logged" : "")}
+        className={"today zone" + (hasLoggedToday ? " today--logged" : "")}
         aria-label="Today"
         hidden={tab !== "today"}
       >
@@ -812,7 +843,7 @@ export default function Home() {
 
       {/* ===== ZONE 2 — JOURNAL ===== */}
       <section
-        className="record"
+        className="record zone"
         aria-label="Journal"
         hidden={tab !== "journal"}
       >
@@ -847,21 +878,45 @@ export default function Home() {
         )}
 
         {entries.length === 0 ? (
-          <p className="empty">
-            {filtering ? "No matching entries." : "No entries yet."}
-          </p>
+          filtering ? (
+            <p className="empty">No matching entries.</p>
+          ) : (
+            <div className="record-empty">
+              <p className="record-empty-lede">
+                The record starts with a single line.
+              </p>
+              <p className="record-empty-sub">
+                Each day you log becomes a page here — searchable, exportable,
+                and gathered into chapters by month.
+              </p>
+            </div>
+          )
         ) : (
           <>
-            <ul>
-              {visibleEntries.map((e) => (
-                <EntryRow
-                  key={e.day}
-                  entry={e}
-                  onSave={saveEntry}
-                  onDelete={onDeleteEntry}
-                />
-              ))}
-            </ul>
+            {filtering && (
+              <p className="record-count" role="status">
+                {entries.length === 1
+                  ? "1 entry matches"
+                  : `${entries.length} entries match`}
+              </p>
+            )}
+            {groupEntriesByMonth(visibleEntries).map((group) => (
+              <section className="record-group" key={group.key}>
+                <h3 className="record-month overline">{group.label}</h3>
+                <ul>
+                  {group.entries.map(({ entry, index }) => (
+                    <EntryRow
+                      key={entry.day}
+                      entry={entry}
+                      index={index}
+                      highlight={filtering ? search.trim() : undefined}
+                      onSave={saveEntry}
+                      onDelete={onDeleteEntry}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))}
             {collapsed && (
               <button
                 className="record-cta"
@@ -885,13 +940,13 @@ export default function Home() {
       </section>
 
       {/* ===== REMINDERS ===== */}
-      <div hidden={tab !== "reminders"} aria-label="Reminders">
+      <div className="zone" hidden={tab !== "reminders"} aria-label="Reminders">
         <NotificationSettings />
       </div>
 
       {/* ===== ZONE 3 — LIFE ===== */}
-      <div hidden={tab !== "life"} aria-label="Life">
-        <LifeCalendar entries={entries} />
+      <div className="zone" hidden={tab !== "life"} aria-label="Life">
+        <LifeCalendar entries={entries} active={tab === "life"} />
       </div>
 
       {/* ===== BOTTOM NAV — liquid glass pill with sliding bubble ===== */}
