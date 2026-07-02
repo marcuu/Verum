@@ -74,14 +74,18 @@ still fires near the configured time (default 20:30). It sends only if reminders
 are enabled, there's no entry for the local day, and one hasn't already gone out
 to that subscription — and disables subscriptions the push service reports as
 gone (404/410). On Vercel Pro you can switch to `*/15 * * * *` for minute-level
-precision; an external scheduler can call the route with `?secret=<CRON_SECRET>`.
+precision; an external scheduler must send `Authorization: Bearer <CRON_SECRET>`.
 
 ## Auth
 
 A single shared secret (`JOURNAL_ACCESS_TOKEN`). The `/login` page posts it to
-`/api/login`, which validates it and sets an httpOnly cookie. `middleware.ts`
-redirects unauthenticated page requests to `/login`; API routes validate the
-cookie themselves. Set `JOURNAL_PUBLIC_READ=true` to allow unauthenticated GETs.
+`/api/login`, which validates it (rate-limited, constant-time) and issues an
+HMAC-signed, 30-day session in an httpOnly cookie — the raw secret is never
+stored client-side, and rotating `SESSION_SECRET` invalidates all sessions.
+`middleware.ts` redirects unauthenticated page requests to `/login`; API routes
+validate the session themselves and reject cross-origin mutations. Set
+`JOURNAL_PUBLIC_READ=true` to allow unauthenticated GETs (journal, quotes,
+streak, life markers — the full export and notification settings stay private).
 
 ## Local development
 
@@ -107,8 +111,9 @@ Get the Supabase keys from **Dashboard → Project Settings → API**. The
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Anon/publishable key |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | **Secret** — server only |
-| `JOURNAL_ACCESS_TOKEN` | yes | Shared login token |
-| `JOURNAL_PUBLIC_READ` | no | `true` to allow anonymous reads (default `false`) |
+| `JOURNAL_ACCESS_TOKEN` | yes | Shared login token — use a long random value |
+| `SESSION_SECRET` | no | **Secret** — signs session cookies; rotate to log out everywhere (falls back to the access token) |
+| `JOURNAL_PUBLIC_READ` | no | `true` to allow anonymous reads (default `false`; export + notification settings stay private) |
 | `QUOTES_CORE_THRESHOLD` | no | Default `3` |
 | `QUOTES_AVOID_DAYS` | no | Default `14` |
 | `NEXT_PUBLIC_DOB` | no | Life calendar DOB, default `1993-12-19` |

@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { utcTs } from "@/lib/dates";
 import { T_LIFE_MARKERS } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function GET() {
     .order("week_index", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("lifeMarkers.list", error);
   }
 
   return NextResponse.json(data ?? []);
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("lifeMarkers.upsert", error);
   }
 
   return NextResponse.json({ ok: true, marker: data });

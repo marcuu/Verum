@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { utcTs } from "@/lib/dates";
 import { T_QUOTES, CORE_THRESHOLD, isCore } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("quotes.list", error);
   }
 
   const out = (data ?? []).map((q) => ({ ...q, is_core: isCore(q.score) }));
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     { onConflict: "text,author", ignoreDuplicates: true }
   );
   if (upErr) {
-    return NextResponse.json({ error: upErr.message }, { status: 500 });
+    return serverError("quotes.upsert", upErr);
   }
 
   const { data, error } = await db
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     .eq("author", author)
     .maybeSingle();
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("quotes.fetch", error);
   }
 
   const quote = data ? { ...data, is_core: isCore(data.score) } : null;

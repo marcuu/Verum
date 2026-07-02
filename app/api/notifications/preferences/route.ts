@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { T_NOTIFICATION_PREFERENCES } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Notification settings stay session-only even when JOURNAL_PUBLIC_READ is on.
 export async function GET() {
-  const unauth = await requireAuth("GET");
+  const unauth = await requireAuth("GET", { allowPublicRead: false });
   if (unauth) return unauth;
 
   const db = getSupabaseAdmin();
@@ -19,7 +21,7 @@ export async function GET() {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("notifications.preferences.get", error);
   }
 
   return NextResponse.json(data);
@@ -28,6 +30,16 @@ export async function GET() {
 // Accepts "HH:mm" or "HH:mm:ss".
 function isHHmm(v: unknown): v is string {
   return typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(v);
+}
+
+// An invalid IANA zone would make localParts() throw and 500 every cron run.
+function isValidTimezone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function PUT(req: NextRequest) {
@@ -60,10 +72,14 @@ export async function PUT(req: NextRequest) {
   };
 
   if (patch.timezone !== undefined) {
-    if (typeof patch.timezone === "string" && patch.timezone.length > 0) {
+    if (
+      typeof patch.timezone === "string" &&
+      patch.timezone.length > 0 &&
+      isValidTimezone(patch.timezone)
+    ) {
       cleaned.timezone = patch.timezone;
     } else {
-      errors.push("timezone must be a non-empty string");
+      errors.push("timezone must be a valid IANA timezone");
     }
   }
 
@@ -97,7 +113,7 @@ export async function PUT(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("notifications.preferences.update", error);
   }
 
   return NextResponse.json(data);

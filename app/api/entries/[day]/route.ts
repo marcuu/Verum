@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { T_ENTRIES } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function GET(
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("entries.get", error);
   }
   return NextResponse.json(data ?? { day, text: "" });
 }
@@ -42,7 +43,7 @@ export async function DELETE(
 
   const { error } = await db.from(T_ENTRIES).delete().eq("day", day);
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("entries.delete", error);
   }
   return NextResponse.json({ ok: true });
 }

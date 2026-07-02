@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getWebPush } from "@/lib/notifications/webPush";
 import { T_NOTIFICATION_SUBSCRIPTIONS } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function POST() {
     .eq("enabled", true);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("notifications.test", error);
   }
 
   const webpush = getWebPush();

@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { utcTs } from "@/lib/dates";
 import { T_QUOTES, isCore } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export async function POST(
     .eq("id", id)
     .maybeSingle();
   if (getErr) {
-    return NextResponse.json({ error: getErr.message }, { status: 500 });
+    return serverError("quotes.vote.get", getErr);
   }
   if (!row) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -48,7 +49,7 @@ export async function POST(
     .select("*")
     .single();
   if (updErr) {
-    return NextResponse.json({ error: updErr.message }, { status: 500 });
+    return serverError("quotes.vote.update", updErr);
   }
 
   return NextResponse.json({

@@ -7,7 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/";
+  // Only follow same-origin paths — an absolute or protocol-relative URL here
+  // would let a crafted login link bounce the user to an attacker page.
+  const rawNext = params.get("next") || "/";
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\")
+      ? rawNext
+      : "/";
 
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
@@ -24,7 +30,11 @@ function LoginForm() {
         body: JSON.stringify({ token }),
       });
       if (!res.ok) {
-        setError("Invalid token. Try again.");
+        setError(
+          res.status === 429
+            ? "Too many attempts. Wait a few minutes and try again."
+            : "Invalid token. Try again."
+        );
         setBusy(false);
         return;
       }
