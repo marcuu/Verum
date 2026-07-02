@@ -12,6 +12,18 @@ export function shiftYears(isoDay: string, years: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+export function shiftDays(isoDay: string, days: number): string {
+  const d = new Date(`${isoDay}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// The closing line of an entry — the voice a day ended on. Moments-structured
+// entries make this the last moment.
+export function lastLineOf(text: string): string {
+  return text.trim().split("\n").map((l) => l.trim()).filter(Boolean).pop() ?? "";
+}
+
 // Collapse whitespace and cut at a word boundary. Push bodies get one line;
 // the excerpt should feel like a sentence resurfacing, not a truncated dump.
 export function excerpt(text: string, max = 90): string {
