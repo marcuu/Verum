@@ -23,6 +23,36 @@ type Preferences = {
   backup_time: string;
 };
 
+type Delivery = {
+  id: string;
+  created_at: string;
+  notification_type: string;
+  status: "sent" | "skipped" | "failed";
+  error: string | null;
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  daily_reminder: "Daily reminder",
+  streak_rescue: "Streak rescue",
+  weekly_reflection: "Weekly reflection",
+  monthly_backup: "Monthly backup",
+  test: "Test",
+};
+
+function deliveryLabel(type: string): string {
+  return TYPE_LABELS[type] ?? type.replace(/_/g, " ");
+}
+
+function deliveryWhen(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
 export default function NotificationSettings() {
   const [supported, setSupported] = useState(false);
   const [permission, setPermission] = useState<
@@ -34,6 +64,7 @@ export default function NotificationSettings() {
   const [message, setMessage] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const advancedInitialized = useRef(false);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
 
   async function refresh() {
     const ok = isNotificationSupported();
@@ -49,6 +80,12 @@ export default function NotificationSettings() {
       () => null
     );
     setPrefs(p);
+
+    // Delivery history is a quiet extra; failing to load it is silent.
+    const d = await api<Delivery[]>("/notifications/deliveries").catch(
+      () => []
+    );
+    setDeliveries(d);
   }
 
   useEffect(() => {
@@ -358,6 +395,44 @@ export default function NotificationSettings() {
                   </div>
                 </div>
               </details>
+
+              {/* Delivery health: a silently-dead reminder looks identical to
+                  a quiet week unless failures are visible here. */}
+              {deliveries[0]?.status === "failed" && (
+                <p className="delivery-warning" role="status">
+                  The last reminder didn&rsquo;t arrive
+                  {deliveries[0].error ? ` — ${deliveries[0].error}` : ""}. If
+                  this keeps happening, disable and re-enable reminders on
+                  this device.
+                </p>
+              )}
+
+              {deliveries.length > 0 && (
+                <details className="notification-advanced">
+                  <summary>Delivery history</summary>
+                  <ul className="delivery-list">
+                    {deliveries.map((d) => (
+                      <li key={d.id} className="delivery-row">
+                        <span
+                          className={`delivery-dot delivery-dot--${d.status}`}
+                          aria-hidden="true"
+                        />
+                        <span className="delivery-when">
+                          {deliveryWhen(d.created_at)}
+                        </span>
+                        <span className="delivery-type">
+                          {deliveryLabel(d.notification_type)}
+                        </span>
+                        <span className="delivery-status">
+                          {d.status === "failed" && d.error
+                            ? `failed — ${d.error}`
+                            : d.status}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
 
               <p className="empty">
                 Reminder times are approximate on this plan &mdash; they can
