@@ -4,12 +4,13 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Verum",
     short_name: "Verum",
-    description: "Personal daily journal and life calendar.",
+    description: "An honest daily record set against the weeks you have left.",
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#0b0b0b",
-    theme_color: "#0b0b0b",
+    // Aligned with the CSS dark --bg so the installed splash reads as the app.
+    background_color: "#0c0c0c",
+    theme_color: "#0c0c0c",
     icons: [
       {
         src: "/icon-192.png",

@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Verum",
-  description: "Personal daily journal + quotes",
+  description: "An honest daily record set against the weeks you have left.",
   // iOS web push only works from a Home-Screen-installed PWA, so give it the
   // standalone hints and touch icon it needs for a clean install.
   appleWebApp: {
@@ -21,7 +21,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   colorScheme: "light dark",
-  themeColor: "#0b0b0b",
+  // Match the app's actual paper: the browser/PWA chrome should read as part
+  // of the page in both schemes, not a fixed dark band over a white journal.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0c0c" },
+  ],
 };
 
 export default function RootLayout({
