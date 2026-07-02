@@ -813,6 +813,74 @@ li:focus-within .actions {
   border-top: 1px solid var(--line);
 }
 
+/* delivery health — failures must be visible, successes stay quiet */
+.delivery-warning {
+  margin: calc(var(--s) * 1.5) 0 0;
+  color: #c0392b;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+@media (prefers-color-scheme: dark) {
+  .delivery-warning {
+    color: #e74c3c;
+  }
+}
+
+.delivery-list {
+  margin: calc(var(--s) * 1.25) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.delivery-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.delivery-dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  align-self: center;
+}
+
+.delivery-dot--sent {
+  background: #87a96b;
+}
+
+.delivery-dot--skipped {
+  background: var(--line);
+}
+
+.delivery-dot--failed {
+  background: #c0392b;
+}
+
+.delivery-when {
+  flex-shrink: 0;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.delivery-type {
+  flex-shrink: 0;
+}
+
+.delivery-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* one block per notification type, kept calm and stacked */
 .notification-group {
   margin-top: calc(var(--s) * 2.5);
