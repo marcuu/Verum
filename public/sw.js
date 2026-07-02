@@ -1,3 +1,81 @@
+// ---- offline shell ----
+// Capture must work on a plane: cache the app shell and static assets so the
+// PWA opens without a network. API traffic is never cached — entries always
+// come live (or queue client-side via lib/offline.ts when the network's gone).
+const SHELL_CACHE = "verum-shell-v1";
+
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => k !== SHELL_CACHE).map((k) => caches.delete(k))
+        )
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return; // never cache the record
+
+  // Navigations: network-first, falling back to the cached shell offline.
+  // Only successful, non-redirect responses are cached so a /login redirect
+  // never becomes the stored shell.
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok && !res.redirected) {
+            const copy = res.clone();
+            caches
+              .open(SHELL_CACHE)
+              .then((c) => c.put("/", copy))
+              .catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => caches.match("/"))
+    );
+    return;
+  }
+
+  // Hashed build assets and icons: cache-first (immutable by construction).
+  const isStatic =
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname === "/manifest.webmanifest" ||
+    /\.(png|ico|svg)$/.test(url.pathname);
+
+  if (isStatic) {
+    event.respondWith(
+      caches.match(req).then(
+        (hit) =>
+          hit ||
+          fetch(req).then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              caches
+                .open(SHELL_CACHE)
+                .then((c) => c.put(req, copy))
+                .catch(() => {});
+            }
+            return res;
+          })
+      )
+    );
+  }
+});
+
 self.addEventListener("push", (event) => {
   let data = {};
 

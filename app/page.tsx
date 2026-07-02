@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
 import { api, todayISO, yesterdayISO } from "@/lib/client";
+import {
+  queuePendingEntry,
+  listPendingEntries,
+  clearPendingEntry,
+} from "@/lib/offline";
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
@@ -187,7 +192,16 @@ export default function Home() {
         setQuoteJustEarned(true);
         refreshQuote();
       }
-    } catch {
+    } catch (err) {
+      // No network? The words are already safe on-device — keep the logged
+      // state and sync when the connection returns. Server errors still revert.
+      const offline =
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
+        err instanceof TypeError;
+      if (offline && queuePendingEntry(todayISO(), text)) {
+        showFlash("Offline — saved on this device. It'll sync when you're back.");
+        return;
+      }
       // Revert optimistic update on failure.
       setSavedDraft(savedDraft);
       setHasLoggedToday(wasLoggedToday);
@@ -195,6 +209,45 @@ export default function Home() {
       showFlash("Couldn't save. Try again.");
     }
   }, [draft, savedDraft, hasLoggedToday, saveEntry, loadEntries, refreshQuote, showFlash]);
+
+  // ---- offline sync ----
+  // Replay queued entries when the connection returns (and on load, in case
+  // the app was closed offline). The upsert makes replays idempotent.
+  const flushPending = useCallback(async () => {
+    const pending = listPendingEntries();
+    if (pending.length === 0) return;
+    let synced = 0;
+    for (const p of pending) {
+      try {
+        await saveEntry(p.day, p.text);
+        clearPendingEntry(p.day);
+        synced++;
+      } catch {
+        break; // still unreachable — the 'online' event will retry
+      }
+    }
+    if (synced > 0) {
+      const todayEntry = await loadEntries("").catch(() => null);
+      if (todayEntry) refreshQuote();
+      showFlash(
+        synced === 1 ? "Offline entry synced." : `${synced} offline entries synced.`
+      );
+    }
+  }, [saveEntry, loadEntries, refreshQuote, showFlash]);
+
+  useEffect(() => {
+    flushPending();
+    window.addEventListener("online", flushPending);
+    return () => window.removeEventListener("online", flushPending);
+  }, [flushPending]);
+
+  // Register the service worker up front so the shell caches for offline
+  // launches — not only once reminders are enabled.
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
   const onDeleteEntry = useCallback(
     async (day: string) => {

@@ -66,6 +66,17 @@ RLS is enabled with **no policies**, so the anon/publishable key cannot read or
 write. All access is via the service-role key from the server-side API routes,
 which sit behind the shared-token auth gate.
 
+## Offline capture
+
+Capture works without a network. The service worker caches the app shell
+(navigations network-first with cache fallback; hashed `/_next/static` assets
+cache-first; **API responses are never cached**), so the installed PWA opens
+offline. A save that can't reach the network is queued on-device
+(`lib/offline.ts`, keyed by day, last write wins) and replayed automatically
+when the connection returns — the one-entry-per-day upsert makes replays
+idempotent. Reading the record still needs a connection; it's capture that
+must never miss.
+
 ## Notifications (PWA + Web Push)
 
 Verum is installable (`app/manifest.ts`, `public/sw.js`) and sends Web Push
