@@ -4,7 +4,12 @@ import {
   T_NOTIFICATION_DELIVERIES,
   T_NOTIFICATION_SUBSCRIPTIONS,
 } from "@/lib/constants";
-import type { NotificationType, PushPayload, SubscriptionRow } from "./types";
+import {
+  PRIORITY_NOTIFICATION_TYPES,
+  type NotificationType,
+  type PushPayload,
+  type SubscriptionRow,
+} from "./types";
 
 type LogicalKeys = {
   logicalDay?: string;
@@ -76,6 +81,15 @@ export async function sendLoggedNotification(
   try {
     const webpush = getWebPush();
 
+    // Priority types break through as immediate, persistent alerts: a high
+    // Urgency header so the push service delivers right away, and a payload
+    // flag the service worker uses to pin the notification on screen.
+    const isPriority = PRIORITY_NOTIFICATION_TYPES.has(options.notificationType);
+    const payload: PushPayload = {
+      ...options.payload,
+      requireInteraction: options.payload.requireInteraction ?? isPriority,
+    };
+
     await webpush.sendNotification(
       {
         endpoint: options.subscription.endpoint,
@@ -84,7 +98,8 @@ export async function sendLoggedNotification(
           auth: options.subscription.auth,
         },
       },
-      JSON.stringify(options.payload)
+      JSON.stringify(payload),
+      { urgency: isPriority ? "high" : "normal" }
     );
 
     await db

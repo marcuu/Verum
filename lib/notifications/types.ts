@@ -13,7 +13,23 @@ export type PushPayload = {
   url: string;
   tag: string;
   type: NotificationType | "test";
+  // When true, the service worker pins the notification on screen (and
+  // vibrates) instead of letting it auto-dismiss — the client half of a
+  // priority alert. Paired with a high Urgency header on delivery.
+  requireInteraction?: boolean;
 };
+
+// Web Push urgency, per RFC 8030 §5.3. "high" tells the push service to wake
+// the device and deliver immediately rather than batching for battery.
+export type PushUrgency = "very-low" | "low" | "normal" | "high";
+
+// Time-sensitive notifications that should arrive as priority alerts: delivered
+// immediately (high Urgency) and pinned on screen until acknowledged. Reflective
+// nudges (weekly/monthly) stay at normal urgency and auto-dismiss.
+export const PRIORITY_NOTIFICATION_TYPES = new Set<NotificationType>([
+  "daily_reminder",
+  "streak_rescue",
+]);
 
 export type SubscriptionRow = {
   id: string;

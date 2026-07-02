@@ -41,7 +41,9 @@ export async function POST() {
           url: "/",
           tag: "verum-test",
           type: "test",
-        })
+          requireInteraction: true,
+        }),
+        { urgency: "high" }
       );
 
       sent += 1;
