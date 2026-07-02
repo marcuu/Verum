@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
-import { api, todayISO } from "@/lib/client";
+import { api, todayISO, yesterdayISO } from "@/lib/client";
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
@@ -40,6 +40,11 @@ export default function Home() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+
+  // One-tap yesterday catch-up: a missed day is recoverable right from Today.
+  const [catchupOpen, setCatchupOpen] = useState(false);
+  const [catchupDraft, setCatchupDraft] = useState("");
+  const catchupRef = useRef<HTMLInputElement>(null);
   // True only for the reveal that immediately follows today's first save, so
   // the reward arrives as a small ceremony rather than just appearing.
   const [quoteJustEarned, setQuoteJustEarned] = useState(false);
@@ -389,6 +394,29 @@ export default function Home() {
   const showCue = draft.trim() !== "" && draft.trim() !== savedDraft;
   const filtering = !!search.trim();
 
+  // ---- yesterday catch-up ----
+  // Offered only when the record already exists (a brand-new journal starts
+  // with today, not homework) and the list is unfiltered so `entries` is the
+  // full record.
+  const yesterdayMissing =
+    !filtering &&
+    entries.length > 0 &&
+    !entries.some((e) => e.day === yesterdayISO());
+
+  const onSaveYesterday = useCallback(async () => {
+    const text = catchupDraft.trim();
+    if (!text) return;
+    try {
+      await saveEntry(yesterdayISO(), text);
+      setCatchupOpen(false);
+      setCatchupDraft("");
+      await loadEntries("");
+      showFlash("Yesterday logged.");
+    } catch {
+      showFlash("Couldn't save yesterday's entry. Try again.");
+    }
+  }, [catchupDraft, saveEntry, loadEntries, showFlash]);
+
   // Record shows the most recent entries by default; search always shows all matches.
   const RECORD_PREVIEW = 7;
   const collapsed = !filtering && !showAll && entries.length > RECORD_PREVIEW;
@@ -536,6 +564,47 @@ export default function Home() {
               }}
             />
             <span className={"capture-cue" + (showCue ? " show" : "")}>
+              ↵ to save
+            </span>
+          </div>
+        )}
+
+        {/* ── Yesterday catch-up: one tap from Today, never a nag ── */}
+        {yesterdayMissing && !catchupOpen && (
+          <button
+            className="catchup-line"
+            type="button"
+            onClick={() => {
+              setCatchupOpen(true);
+              requestAnimationFrame(() => catchupRef.current?.focus());
+            }}
+          >
+            Yesterday went unlogged — add a line?
+          </button>
+        )}
+        {yesterdayMissing && catchupOpen && (
+          <div className="capture capture-row catchup-row">
+            <input
+              ref={catchupRef}
+              type="text"
+              placeholder="What happened yesterday?"
+              autoComplete="off"
+              value={catchupDraft}
+              onChange={(e) => setCatchupDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSaveYesterday();
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setCatchupOpen(false);
+                }
+              }}
+            />
+            <span
+              className={"capture-cue" + (catchupDraft.trim() ? " show" : "")}
+            >
               ↵ to save
             </span>
           </div>

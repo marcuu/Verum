@@ -265,6 +265,32 @@ button:disabled {
   color: var(--entry);
 }
 
+/* yesterday catch-up — a quiet offer, not homework */
+.catchup-line {
+  display: block;
+  padding: 0.35rem 0;
+  margin-top: calc(var(--s) * 1.5);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.catchup-line:hover {
+  color: var(--ink);
+}
+
+.catchup-row {
+  margin-top: calc(var(--s) * 1.5);
+}
+
+.catchup-row input {
+  font-size: 1rem; /* subordinate to today's 1.35rem capture */
+}
+
 /* on this day in prior years — quiet recall, collapsed by default */
 .past {
   margin-top: calc(var(--s) * 2);
