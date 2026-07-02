@@ -8,6 +8,7 @@ export default function QuoteBox({
   quote,
   loading,
   busy,
+  celebrate = false,
   onVote,
   onDelete,
   onAdd,
@@ -15,6 +16,7 @@ export default function QuoteBox({
   quote: Quote | null;
   loading: boolean;
   busy: boolean;
+  celebrate?: boolean;
   onVote: (delta: 1 | -1) => void;
   onDelete: () => void;
   onAdd: () => void;
@@ -43,7 +45,10 @@ export default function QuoteBox({
   const author = !loading && quote!.author ? `— ${quote!.author}` : "";
 
   return (
-    <section className="quoteBox" aria-label="Daily quote">
+    <section
+      className={"quoteBox" + (celebrate && quote ? " quoteBox--earned" : "")}
+      aria-label="Daily quote"
+    >
       <div className="qText">{text}</div>
       <div className="qAuthor">{author}</div>
       <div className="qActions" aria-label="Quote actions">

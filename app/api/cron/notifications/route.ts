@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { safeEqual } from "@/lib/session";
+import { APP_TIMEZONE } from "@/lib/dates";
 import { serverError } from "@/lib/apiError";
 import { localParts } from "@/lib/notifications/schedule";
 import {
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
     return serverError("cron.preferences", prefsError);
   }
 
-  const timezone = prefs.timezone || "Europe/London";
+  const timezone = prefs.timezone || APP_TIMEZONE;
   const local = localParts(timezone);
 
   const { data: subs, error: subsError } = await db

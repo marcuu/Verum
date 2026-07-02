@@ -6,10 +6,13 @@ import {
   isoWeekKey,
   startOfWeekMonday,
 } from "../week";
+import { excerpt, pickResonantEntry, shiftYears } from "../reflection";
 import type { JobContext, JobResult } from "../types";
 
 // R4 weekly reflection: a once-a-week prompt to review the record. Sends even
-// with zero entries — the point is to nudge reflection or a restart.
+// with zero entries — the point is to nudge reflection or a restart. When the
+// record has something to say, it says it in the owner's own words: the most
+// substantial entry from this week last year resurfaces as the message.
 export async function runWeeklyReflection({
   db,
   prefs,
@@ -38,8 +41,23 @@ export async function runWeeklyReflection({
 
   const count = entries?.length ?? 0;
 
+  // Resonance first: this week last year, in the owner's own words.
+  const lastYearStart = shiftYears(weekStart, -1);
+  const lastYearEnd = shiftYears(weekEnd, -1);
+  const { data: lastYear, error: lastYearError } = await db
+    .from(T_ENTRIES)
+    .select("day, text")
+    .gte("day", lastYearStart)
+    .lte("day", lastYearEnd);
+
+  if (lastYearError) throw lastYearError;
+
+  const resonant = pickResonantEntry(lastYear ?? []);
+
   let body = "Want to restart the record?";
-  if (count >= 5) {
+  if (resonant) {
+    body = `A year ago this week: “${excerpt(resonant.text)}”`;
+  } else if (count >= 5) {
     body = "Your week is ready to review.";
   } else if (count >= 1) {
     body = "You captured part of the week.";
@@ -64,6 +82,7 @@ export async function runWeeklyReflection({
         weekStart,
         weekEnd,
         entryCount: count,
+        resonantDay: resonant?.day ?? null,
       },
     });
 

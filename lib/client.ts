@@ -35,7 +35,21 @@ export async function api<T = unknown>(
     : await res.text()) as T;
 }
 
-// ---- UTC date helpers (client) ----
-export function todayISOUTC(): string {
-  return new Date().toISOString().slice(0, 10);
+// ---- date helpers (client) ----
+// The day an entry belongs to is the day the owner lived: the device's local
+// calendar date. (Previously UTC, which pushed late-evening entries onto
+// tomorrow's date during BST.)
+function localISO(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function todayISO(): string {
+  return localISO(new Date());
+}
+
+export function yesterdayISO(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1); // local-date rollover, DST-safe
+  return localISO(d);
 }

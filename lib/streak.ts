@@ -1,4 +1,5 @@
-// Streak math over journal days (YYYY-MM-DD, UTC).
+// Streak math over journal days (YYYY-MM-DD calendar strings; arithmetic
+// internally uses UTC constructors, which is exact for date-only strings).
 //
 // current: actual logged days in the run ending today/yesterday, with
 //          grace-day forgiveness (1 missed day per rolling 7-day window

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { utcTs, utcDay } from "@/lib/dates";
+import { utcTs, localDay } from "@/lib/dates";
 import { T_ENTRIES } from "@/lib/constants";
 import { serverError } from "@/lib/apiError";
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     day?: string;
     text?: string;
   };
-  const day = (body.day || utcDay()).trim();
+  const day = (body.day || localDay()).trim();
   const text = (body.text || "").trim();
 
   if (!text) {
