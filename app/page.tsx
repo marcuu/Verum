@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, FileText, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Download, FileText, LogOut, Search, CalendarDays, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
 import { api, todayISO, yesterdayISO } from "@/lib/client";
 import {
   queuePendingEntry,
@@ -11,6 +11,7 @@ import {
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
 import { birthdayWindow } from "@/lib/lifeWeeks";
+import { excerpt } from "@/lib/notifications/reflection";
 import type { StreakInfo } from "@/lib/streak";
 import type { Entry, Quote } from "@/lib/types";
 import QuoteBox from "@/components/QuoteBox";
@@ -51,6 +52,10 @@ export default function Home() {
   const [catchupOpen, setCatchupOpen] = useState(false);
   const [catchupDraft, setCatchupDraft] = useState("");
   const catchupRef = useRef<HTMLInputElement>(null);
+
+  // Moments: once today is logged, capture appends — it never opens an editor.
+  const [momentDraft, setMomentDraft] = useState("");
+  const editRef = useRef<HTMLTextAreaElement>(null);
   // True only for the reveal that immediately follows today's first save, so
   // the reward arrives as a small ceremony rather than just appearing.
   const [quoteJustEarned, setQuoteJustEarned] = useState(false);
@@ -210,6 +215,34 @@ export default function Home() {
       showFlash("Couldn't save. Try again.");
     }
   }, [draft, savedDraft, hasLoggedToday, saveEntry, loadEntries, refreshQuote, showFlash]);
+
+  // Append a moment to today without touching what's already written.
+  const onAddMoment = useCallback(async () => {
+    const moment = momentDraft.trim();
+    if (!moment) return;
+    const base = savedDraft.trim();
+    const text = base ? `${base}\n${moment}` : moment;
+    // Optimistic: the moment joins the day immediately.
+    setMomentDraft("");
+    setSavedDraft(text);
+    setDraft(text);
+    try {
+      await saveEntry(todayISO(), text);
+      loadEntries("").catch(() => {});
+    } catch (err) {
+      const offline =
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
+        err instanceof TypeError;
+      if (offline && queuePendingEntry(todayISO(), text)) {
+        showFlash("Offline — saved on this device. It'll sync when you're back.");
+        return;
+      }
+      setSavedDraft(base);
+      setDraft(base);
+      setMomentDraft(moment); // give the words back
+      showFlash("Couldn't save. Try again.");
+    }
+  }, [momentDraft, savedDraft, saveEntry, loadEntries, showFlash]);
 
   // ---- offline sync ----
   // Replay queued entries when the connection returns (and on load, in case
@@ -469,6 +502,29 @@ export default function Home() {
     todayISO()
   );
 
+  // The greeting: before asking for anything, the record gives one line back —
+  // yesterday's last moment, or the most recent entry for longer gaps.
+  const greeting = useMemo(() => {
+    if (hasLoggedToday || filtering || entries.length === 0) return null;
+    const today = todayISO();
+    const source =
+      entries.find((e) => e.day === yesterdayISO()) ??
+      entries.find((e) => e.day < today);
+    if (!source) return null;
+    const lastLine =
+      source.text.trim().split("\n").filter(Boolean).pop() ?? "";
+    if (!lastLine) return null;
+    const label =
+      source.day === yesterdayISO()
+        ? "Yesterday"
+        : new Date(`${source.day}T00:00:00Z`).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            timeZone: "UTC",
+          });
+    return { label, line: excerpt(lastLine, 90) };
+  }, [hasLoggedToday, filtering, entries]);
+
   // ---- yesterday catch-up ----
   // Offered only when the record already exists (a brand-new journal starts
   // with today, not homework) and the list is unfiltered so `entries` is the
@@ -578,7 +634,14 @@ export default function Home() {
         aria-label="Today"
         hidden={tab !== "today"}
       >
-        <p className="overline today-date">{todayLabel}</p>
+        <p className="today-date">{todayLabel}</p>
+
+        {/* ── The greeting: the record gives before it asks ── */}
+        {greeting && (
+          <p className="greeting">
+            {greeting.label} — &ldquo;{greeting.line}&rdquo;
+          </p>
+        )}
 
         {/* ── Unlogged state: capture hero ── */}
         {!hasLoggedToday && (
@@ -604,51 +667,79 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── Logged state: entry preview (tap to edit) ── */}
+        {/* ── Logged state: the day as its moments; tap to correct ── */}
         {hasLoggedToday && !todayEditMode && (
-          <button
-            className="entry-preview-block"
-            type="button"
-            aria-label="Edit today's entry"
-            onClick={() => {
-              setTodayEditMode(true);
-              requestAnimationFrame(() => {
-                entryRef.current?.focus();
-                entryRef.current?.select();
-              });
-            }}
-          >
-            <p className="entry-preview-text">{savedDraft}</p>
-            <span className="entry-preview-cta">
-              Continue
-              <ChevronRight size={13} aria-hidden="true" />
-            </span>
-          </button>
+          <>
+            <button
+              className="moments-block"
+              type="button"
+              aria-label="Edit today's entry"
+              onClick={() => {
+                setTodayEditMode(true);
+                requestAnimationFrame(() => {
+                  const el = editRef.current;
+                  if (el) {
+                    el.focus();
+                    el.setSelectionRange(el.value.length, el.value.length);
+                  }
+                });
+              }}
+            >
+              {savedDraft
+                .split("\n")
+                .filter((m) => m.trim())
+                .map((m, i) => (
+                  <p className="moment" key={i}>
+                    {m}
+                  </p>
+                ))}
+            </button>
+            <div className="capture capture-row moment-row">
+              <input
+                type="text"
+                placeholder="Add a moment…"
+                autoComplete="off"
+                value={momentDraft}
+                onChange={(e) => setMomentDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onAddMoment();
+                  }
+                }}
+              />
+              <span
+                className={"capture-cue" + (momentDraft.trim() ? " show" : "")}
+              >
+                ↵ to add
+              </span>
+            </div>
+          </>
         )}
 
-        {/* ── Logged edit mode: inline continue writing ── */}
+        {/* ── Logged edit mode: the whole day, newlines intact ── */}
         {hasLoggedToday && todayEditMode && (
-          <div className="capture capture-row">
-            <input
-              ref={entryRef}
-              type="text"
+          <div className="capture capture-edit">
+            <textarea
+              ref={editRef}
+              className="capture-textarea"
               placeholder={CAPTURE_PROMPT}
-              autoComplete="off"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                   e.preventDefault();
                   onSaveDraft();
                 }
                 if (e.key === "Escape") {
                   e.preventDefault();
+                  setDraft(savedDraft);
                   setTodayEditMode(false);
                 }
               }}
             />
             <span className={"capture-cue" + (showCue ? " show" : "")}>
-              ↵ to save
+              ⌘↵ to save · esc to cancel
             </span>
           </div>
         )}
