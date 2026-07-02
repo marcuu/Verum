@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_COOKIE } from "@/lib/auth";
+import { sessionCookieName, verifySessionValue } from "@/lib/session";
 
 // Protect application pages. API routes self-guard via requireAuth(), and the
 // login page / auth endpoints must stay reachable while logged out.
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // PWA assets must stay reachable without auth so the manifest, service worker
@@ -24,12 +24,11 @@ export function middleware(req: NextRequest) {
 
   if (isPublic) return NextResponse.next();
 
-  const token = req.cookies.get(AUTH_COOKIE)?.value;
-  const expected = process.env.JOURNAL_ACCESS_TOKEN;
+  const session = req.cookies.get(sessionCookieName())?.value;
   const publicRead =
     (process.env.JOURNAL_PUBLIC_READ ?? "false").toLowerCase() === "true";
 
-  const authed = !!expected && token === expected;
+  const authed = await verifySessionValue(session);
 
   if (!authed && !publicRead) {
     const url = req.nextUrl.clone();

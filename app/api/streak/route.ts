@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { utcDay } from "@/lib/dates";
 import { T_ENTRIES } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function GET() {
     .order("day", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("streak", error);
   }
 
   const days = (data ?? []).map((r) => r.day as string);

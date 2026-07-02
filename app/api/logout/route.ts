@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { AUTH_COOKIE } from "@/lib/auth";
+import { sessionCookieName } from "@/lib/session";
 
 export const runtime = "nodejs";
 
 export async function POST() {
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(AUTH_COOKIE, "", { path: "/", maxAge: 0 });
+  res.cookies.set(sessionCookieName(), "", { path: "/", maxAge: 0 });
+  // Clear the pre-session cookie that older clients may still hold.
+  res.cookies.set("verum_token", "", { path: "/", maxAge: 0 });
   return res;
 }

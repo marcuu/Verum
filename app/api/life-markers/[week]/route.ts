@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { T_LIFE_MARKERS } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export async function DELETE(
     .eq("week_index", weekIndex);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("lifeMarkers.delete", error);
   }
 
   return NextResponse.json({ ok: true });

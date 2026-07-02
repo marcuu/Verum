@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { utcTs, utcDay } from "@/lib/dates";
 import { T_ENTRIES } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,15 +13,20 @@ export async function GET(req: NextRequest) {
   const unauth = await requireAuth("GET");
   if (unauth) return unauth;
 
-  const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
+  const q = (req.nextUrl.searchParams.get("q") ?? "").trim().slice(0, 200);
   const db = getSupabaseAdmin();
 
   let query = db.from(T_ENTRIES).select("*").order("day", { ascending: false });
-  if (q) query = query.ilike("text", `%${q}%`);
+  if (q) {
+    // Escape LIKE metacharacters so user input matches literally instead of
+    // acting as wildcards (correctness + avoids pathological scans).
+    const escaped = q.replace(/[\\%_]/g, (m) => `\\${m}`);
+    query = query.ilike("text", `%${escaped}%`);
+  }
 
   const { data, error } = await query;
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("entries.list", error);
   }
   return NextResponse.json(data ?? []);
 }
@@ -55,7 +61,7 @@ export async function POST(req: NextRequest) {
     );
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("entries.upsert", error);
   }
   return NextResponse.json({ ok: true, day });
 }

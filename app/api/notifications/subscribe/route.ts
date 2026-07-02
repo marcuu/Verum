@@ -2,9 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { T_NOTIFICATION_SUBSCRIPTIONS } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// The server later makes outbound requests to this endpoint (web-push), so
+// only accept well-formed https URLs of sane length — not arbitrary strings.
+function isValidPushEndpoint(endpoint: unknown): endpoint is string {
+  if (typeof endpoint !== "string" || endpoint.length > 1024) return false;
+  try {
+    return new URL(endpoint).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isKeyString(v: unknown): v is string {
+  return typeof v === "string" && v.length > 0 && v.length <= 256;
+}
 
 export async function POST(req: NextRequest) {
   const unauth = await requireAuth("POST");
@@ -15,7 +31,7 @@ export async function POST(req: NextRequest) {
   const p256dh = body?.keys?.p256dh;
   const auth = body?.keys?.auth;
 
-  if (!endpoint || !p256dh || !auth) {
+  if (!isValidPushEndpoint(endpoint) || !isKeyString(p256dh) || !isKeyString(auth)) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
@@ -37,7 +53,7 @@ export async function POST(req: NextRequest) {
   );
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("notifications.subscribe", error);
   }
 
   return NextResponse.json({ ok: true });

@@ -32,8 +32,14 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
+  // Pin navigation to this origin; a payload URL pointing elsewhere falls
+  // back to the app root.
   const targetUrl = event.notification?.data?.url || "/";
-  const url = new URL(targetUrl, self.location.origin).href;
+  const resolved = new URL(targetUrl, self.location.origin);
+  const url =
+    resolved.origin === self.location.origin
+      ? resolved.href
+      : self.location.origin + "/";
 
   event.waitUntil(
     clients

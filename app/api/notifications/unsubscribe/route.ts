@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { T_NOTIFICATION_SUBSCRIPTIONS } from "@/lib/constants";
+import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     .eq("endpoint", endpoint);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return serverError("notifications.unsubscribe", error);
   }
 
   return NextResponse.json({ ok: true });

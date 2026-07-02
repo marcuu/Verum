@@ -1,9 +1,10 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { safeEqual, sessionCookieName, verifySessionValue } from "@/lib/session";
 
-export const AUTH_COOKIE = "verum_token";
-
-// The shared secret. Mirrors the Flask JOURNAL_ACCESS_TOKEN model.
+// The shared secret. Mirrors the Flask JOURNAL_ACCESS_TOKEN model. Only the
+// login route compares against it; authenticated requests carry a derived
+// session cookie instead (see lib/session.ts).
 export function expectedToken(): string | undefined {
   return process.env.JOURNAL_ACCESS_TOKEN;
 }
@@ -13,24 +14,68 @@ export function publicRead(): boolean {
   return (process.env.JOURNAL_PUBLIC_READ ?? "false").toLowerCase() === "true";
 }
 
-export function tokenMatches(token: string | undefined | null): boolean {
+// Constant-time check of the submitted access token.
+export async function tokenMatches(
+  token: string | undefined | null
+): Promise<boolean> {
   const expected = expectedToken();
-  return !!expected && token === expected;
+  if (!expected || !token) return false;
+  return safeEqual(token, expected);
 }
 
-// Read the token from the httpOnly cookie (set at login).
-export async function cookieToken(): Promise<string | undefined> {
+// True when the request's session cookie carries a valid, unexpired session.
+export async function hasValidSession(): Promise<boolean> {
   const store = await cookies();
-  return store.get(AUTH_COOKIE)?.value;
+  return verifySessionValue(store.get(sessionCookieName())?.value);
 }
 
-// Guard for API route handlers. Returns a 401 NextResponse when unauthorized,
-// otherwise null (meaning: proceed). GET is allowed without a token when
-// JOURNAL_PUBLIC_READ is enabled, matching the original Flask behaviour.
-export async function requireAuth(method: string): Promise<NextResponse | null> {
-  if (method === "GET" && publicRead()) return null;
-  const token = await cookieToken();
-  if (!tokenMatches(token)) {
+// Cross-site request check for state-changing methods. SameSite=Lax already
+// keeps the cookie off cross-site POSTs; this is defense in depth in case a
+// browser/webview weakens that, and it costs nothing for same-origin callers.
+async function isSameOriginRequest(): Promise<boolean> {
+  const h = await headers();
+
+  const fetchSite = h.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") {
+    return false;
+  }
+
+  const origin = h.get("origin");
+  if (!origin) return true; // non-browser clients (curl, tests)
+
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
+type AuthOptions = {
+  // Set false on routes that must stay private even when JOURNAL_PUBLIC_READ
+  // is enabled (full export, notification settings).
+  allowPublicRead?: boolean;
+};
+
+// Guard for API route handlers. Returns a 401/403 NextResponse when
+// unauthorized, otherwise null (meaning: proceed). GET is allowed without a
+// session when JOURNAL_PUBLIC_READ is enabled, matching the original Flask
+// behaviour — but only for routes that opt in via allowPublicRead.
+export async function requireAuth(
+  method: string,
+  opts: AuthOptions = {}
+): Promise<NextResponse | null> {
+  const { allowPublicRead = true } = opts;
+
+  if (method === "GET" && allowPublicRead && publicRead()) return null;
+
+  if (method !== "GET" && method !== "HEAD") {
+    if (!(await isSameOriginRequest())) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+  }
+
+  if (!(await hasValidSession())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   return null;

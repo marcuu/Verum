@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { safeEqual } from "@/lib/session";
+import { serverError } from "@/lib/apiError";
 import { localParts } from "@/lib/notifications/schedule";
 import {
   T_NOTIFICATION_PREFERENCES,
@@ -27,25 +29,22 @@ const JOBS: Record<string, (ctx: JobContext) => Promise<JobResult>> = {
 };
 
 // Vercel cron sends `Authorization: Bearer <CRON_SECRET>` when CRON_SECRET is
-// set. We also accept `?secret=` as a fallback for external schedulers.
-function assertCron(req: NextRequest): NextResponse | null {
+// set. Header only — secrets in query strings end up in request logs, proxy
+// logs and copied URLs. Comparison is constant-time.
+async function assertCron(req: NextRequest): Promise<NextResponse | null> {
   const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const auth = req.headers.get("authorization") ?? "";
 
-  const auth = req.headers.get("authorization");
-  const querySecret = req.nextUrl.searchParams.get("secret");
-
-  if (auth === `Bearer ${secret}` || querySecret === secret) {
+  if (secret && (await safeEqual(auth, `Bearer ${secret}`))) {
     return null;
   }
 
+  console.warn("[cron] unauthorized request to /api/cron/notifications");
   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 }
 
 export async function GET(req: NextRequest) {
-  const unauth = assertCron(req);
+  const unauth = await assertCron(req);
   if (unauth) return unauth;
 
   const job = req.nextUrl.searchParams.get("job") ?? "daily";
@@ -67,7 +66,7 @@ export async function GET(req: NextRequest) {
     .single();
 
   if (prefsError) {
-    return NextResponse.json({ error: prefsError.message }, { status: 500 });
+    return serverError("cron.preferences", prefsError);
   }
 
   const timezone = prefs.timezone || "Europe/London";
@@ -79,7 +78,7 @@ export async function GET(req: NextRequest) {
     .eq("enabled", true);
 
   if (subsError) {
-    return NextResponse.json({ error: subsError.message }, { status: 500 });
+    return serverError("cron.subscriptions", subsError);
   }
 
   const result = await runner({ db, prefs, local, subs: subs ?? [] });
