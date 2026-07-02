@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { excerpt, pickResonantEntry, shiftYears } from "@/lib/notifications/reflection";
+import {
+  excerpt,
+  lastLineOf,
+  pickResonantEntry,
+  shiftDays,
+  shiftYears,
+} from "@/lib/notifications/reflection";
 
 describe("shiftYears", () => {
   it("moves a plain date back a year", () => {
@@ -12,6 +18,36 @@ describe("shiftYears", () => {
 
   it("resolves Feb 29 to Mar 1 on non-leap years", () => {
     expect(shiftYears("2024-02-29", 1)).toBe("2025-03-01");
+  });
+});
+
+describe("shiftDays", () => {
+  it("moves back a day, across month boundaries", () => {
+    expect(shiftDays("2026-07-01", -1)).toBe("2026-06-30");
+  });
+
+  it("moves forward across a year boundary", () => {
+    expect(shiftDays("2025-12-31", 1)).toBe("2026-01-01");
+  });
+});
+
+describe("lastLineOf", () => {
+  it("returns the whole text for a single-line entry", () => {
+    expect(lastLineOf("A calm day.")).toBe("A calm day.");
+  });
+
+  it("returns the final moment of a moments-structured day", () => {
+    expect(lastLineOf("Coffee with Sam.\nFinished the deck.\nLate walk.")).toBe(
+      "Late walk."
+    );
+  });
+
+  it("skips trailing blank lines and whitespace", () => {
+    expect(lastLineOf("First.\nLast real line.\n  \n")).toBe("Last real line.");
+  });
+
+  it("is empty for blank text", () => {
+    expect(lastLineOf("   \n  ")).toBe("");
   });
 });
 
