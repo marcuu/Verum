@@ -40,6 +40,9 @@ export default function Home() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  // True only for the reveal that immediately follows today's first save, so
+  // the reward arrives as a small ceremony rather than just appearing.
+  const [quoteJustEarned, setQuoteJustEarned] = useState(false);
 
   const [flash, setFlash] = useState<FlashState | null>(null);
 
@@ -135,6 +138,14 @@ export default function Home() {
     loadPastEntries();
   }, [loadEntries, refreshQuote, showFlash, loadPastEntries]);
 
+  // The earned-reveal is a one-shot: once the quote has arrived and played its
+  // entrance, drop the flag so switching tabs doesn't replay the ceremony.
+  useEffect(() => {
+    if (!quoteJustEarned || !quote) return;
+    const t = setTimeout(() => setQuoteJustEarned(false), 1200);
+    return () => clearTimeout(t);
+  }, [quoteJustEarned, quote]);
+
   // debounced search
   useEffect(() => {
     const t = setTimeout(() => {
@@ -167,7 +178,10 @@ export default function Home() {
       await saveEntry(todayISOUTC(), text);
       // Non-blocking reload so streak and entry list update in background.
       loadEntries("").catch(() => {});
-      if (!wasLoggedToday) refreshQuote();
+      if (!wasLoggedToday) {
+        setQuoteJustEarned(true);
+        refreshQuote();
+      }
     } catch {
       // Revert optimistic update on failure.
       setSavedDraft(savedDraft);
@@ -536,6 +550,7 @@ export default function Home() {
             quote={quote}
             loading={quoteLoading}
             busy={quoteBusy}
+            celebrate={quoteJustEarned}
             onVote={onVote}
             onDelete={onDeleteQuote}
             onAdd={() => setComposerOpen(true)}
