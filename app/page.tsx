@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, LogOut, Search, CalendarDays, ChevronRight, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
-import { api, todayISOUTC } from "@/lib/client";
+import { api, todayISO } from "@/lib/client";
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
 import type { StreakInfo } from "@/lib/streak";
@@ -84,7 +84,7 @@ export default function Home() {
     );
     setEntries(data);
     if (!q) {
-      const today = todayISOUTC();
+      const today = todayISO();
       const todayEntry = data.find((e) => e.day === today);
       if (todayEntry) {
         setDraft(todayEntry.text);
@@ -175,7 +175,7 @@ export default function Home() {
     setHasLoggedToday(true);
     setTodayEditMode(false);
     try {
-      await saveEntry(todayISOUTC(), text);
+      await saveEntry(todayISO(), text);
       // Non-blocking reload so streak and entry list update in background.
       loadEntries("").catch(() => {});
       if (!wasLoggedToday) {
@@ -202,7 +202,7 @@ export default function Home() {
       // Optimistic removal; recompute streak locally when viewing the full list.
       setEntries(next);
       if (!filtering) {
-        const info = computeStreak(next.map((e) => e.day), todayISOUTC());
+        const info = computeStreak(next.map((e) => e.day), todayISO());
         setStreak(info);
         setHasLoggedToday(info.loggedToday);
         if (!info.loggedToday) setTodayEditMode(false);
@@ -213,7 +213,7 @@ export default function Home() {
       } catch {
         setEntries(prev);
         if (!filtering) {
-          const info = computeStreak(prev.map((e) => e.day), todayISOUTC());
+          const info = computeStreak(prev.map((e) => e.day), todayISO());
           setStreak(info);
           setHasLoggedToday(info.loggedToday);
         }
@@ -541,7 +541,7 @@ export default function Home() {
           </div>
         )}
 
-        <PastEntries entries={pastEntries} today={todayISOUTC()} />
+        <PastEntries entries={pastEntries} today={todayISO()} />
 
         <StreakBanner streak={streak} />
 
