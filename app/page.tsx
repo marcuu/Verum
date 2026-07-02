@@ -10,6 +10,7 @@ import {
 } from "@/lib/offline";
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
+import { birthdayWindow } from "@/lib/lifeWeeks";
 import type { StreakInfo } from "@/lib/streak";
 import type { Entry, Quote } from "@/lib/types";
 import QuoteBox from "@/components/QuoteBox";
@@ -462,6 +463,12 @@ export default function Home() {
   const showCue = draft.trim() !== "" && draft.trim() !== savedDraft;
   const filtering = !!search.trim();
 
+  // For a week after each birthday, Today offers the closed year's review.
+  const birthday = birthdayWindow(
+    process.env.NEXT_PUBLIC_DOB ?? "1993-12-19",
+    todayISO()
+  );
+
   // ---- yesterday catch-up ----
   // Offered only when the record already exists (a brand-new journal starts
   // with today, not homework) and the list is unfiltered so `entries` is the
@@ -690,6 +697,14 @@ export default function Home() {
         <PastEntries entries={pastEntries} today={todayISO()} />
 
         <StreakBanner streak={streak} />
+
+        {/* ── Birthday moment: the year that just closed, offered quietly ── */}
+        {birthday.active && birthday.closedAge !== null && (
+          <a className="catchup-line birthday-line" href={`/year/${birthday.closedAge}`}>
+            A year of your life just closed — see age {birthday.closedAge} against
+            the calendar
+          </a>
+        )}
 
         {hasLoggedToday && (
           <QuoteBox

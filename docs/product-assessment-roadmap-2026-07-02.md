@@ -240,7 +240,8 @@ behind.
 
 ### Q2 2027 — *"Built to outlive its stack"* (Strategy 3 + 4, Expand groundwork)
 
-- Verified automated backups, surfaced in-app.
+- ~~Verified automated backups~~ — **dropped per CEO decision (2026-07-02)**;
+  the monthly backup reminder + manual JSON/Markdown export remain the path.
 - Portability pass: documented restore path from bare export to fresh
   deployment; plain-text/Markdown archive alongside JSON.
 - Birthday artifact shipped: "year against the calendar," plus a first cut of
