@@ -1,15 +1,17 @@
 // Minimal in-memory failure throttle for the login endpoint.
 //
-// Serverless caveat: state lives per warm instance, so a determined attacker
-// spread across cold starts sees weaker limits than these numbers suggest.
-// This still blunts naive brute force from a single source; pair it with a
-// platform-level rule (e.g. Vercel WAF rate limiting on /api/login) for a
-// hard guarantee.
+// This is the FALLBACK layer: the durable counter lives in Postgres (see
+// lib/loginThrottle.ts), which holds across cold starts and instances. This
+// per-warm-instance map only decides when the database is unreachable.
 
 type Bucket = { failures: number; resetAt: number };
 
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_FAILURES = 10;
+// Shared with the durable layer so both enforce the same policy.
+export const LOGIN_WINDOW_SECONDS = 15 * 60;
+export const LOGIN_MAX_FAILURES = 10;
+
+const WINDOW_MS = LOGIN_WINDOW_SECONDS * 1000;
+const MAX_FAILURES = LOGIN_MAX_FAILURES;
 
 const buckets = new Map<string, Bucket>();
 

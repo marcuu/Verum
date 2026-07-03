@@ -120,11 +120,13 @@ swallowed delivery-log errors, duplicate initial fetch, NaN-able env parsing,
 
 **Update, same day (debt-payoff pass):**
 
-- **TD-1 PAID** — schema now lives in `supabase/migrations/` (ordered,
-  CLI-appliable), including a guarded baseline reconstruction of the core
-  tables + daily-pick RPC that were never in the repo at all; the run-once
-  files in `docs/` are gone. README documents the `link`/`db push`/`repair`
-  workflow.
+- **TD-1 PAID** — schema now lives in `supabase/migrations/` as an **exact
+  mirror of the live project's applied history** (all seven migrations pulled
+  from `supabase_migrations.schema_migrations`, versions and contents
+  verified against production — which corrected two wrong guesses in the
+  first-pass reconstruction: `day` columns are `text` not `date`, and the
+  daily-pick RPC prefers *regular* quotes over core). The run-once files in
+  `docs/` are gone; repo and database can no longer drift silently.
 - **TD-2 PAID** — a throwing cron job now logs, returns 500 (platform records
   the failure), and pages the owner via a priority `system_alert` push on the
   app's own channel, deduped to one per day by the existing delivery index.
@@ -139,9 +141,22 @@ swallowed delivery-log errors, duplicate initial fetch, NaN-able env parsing,
 - **TD-12 PAID** — `excerpt`/`lastLineOf` moved to `lib/text.ts`; the UI no
   longer imports from the notifications module.
 
-TD-6 (WAF rule) remains a dashboard action; TD-5 and TD-7 remain scheduled.
-Data & schema and Operability should be re-scored at the next quarterly run
-with these in place.
+- **TD-6 PAID (differently than priced)** — the Vercel MCP toolset exposes no
+  firewall management, and WAF rate-limit rules aren't available on the Hobby
+  plan regardless. So the guarantee moved into Postgres instead: a
+  `verum_login_throttle` table + atomic `verum_login_failure` function give
+  the login limiter a durable, cross-instance counter, with the in-memory
+  limiter demoted to a database-down fallback. Verified live against
+  production before wiring the route.
+
+Applied to the live project the same day (via Supabase MCP): the
+`verum-backups` bucket, the throttle table/function, and a `search_path` pin
+on `verum_pick_daily_quote` (security lint 0011). The repo's
+`supabase/migrations/` now mirrors `supabase_migrations.schema_migrations`
+exactly — ten migrations, byte-for-byte.
+
+TD-5 and TD-7 remain scheduled. Data & schema, Operability, and Security
+should be re-scored at the next quarterly run with these in place.
 
 ### History
 

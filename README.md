@@ -62,18 +62,18 @@ that selects and records the day's quote atomically, notification tables
 `verum_notification_deliveries`), and a private `verum-backups` Storage bucket.
 
 **Schema lives in `supabase/migrations/`** (ordered, one file per change).
-Apply with the Supabase CLI:
+The files are an exact mirror of the project's applied migration history
+(pulled from `supabase_migrations.schema_migrations` on 2026-07-03), so the
+CLI recognizes them as applied and `db push` only runs what's genuinely new:
 
 ```bash
 supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-For a project that predates the migration history (this one), baseline first —
-`supabase migration repair --status applied <version>` for each migration that
-matches what's already live — so `db push` only applies what's genuinely new.
-The `..._baseline_core.sql` file is a guarded reconstruction of the original
-Flask-era schema; on drift, prefer the live definition and repair.
+New schema changes = new timestamped file here, applied via `db push` (or the
+Supabase MCP `apply_migration`, which records history the same way). Never
+edit an applied migration; add a new one.
 
 RLS is enabled with **no policies**, so the anon/publishable key cannot read or
 write. All access is via the service-role key from the server-side API routes,
@@ -140,7 +140,8 @@ at most one per day — pointing at the delivery history panel.
 ## Auth
 
 A single shared secret (`JOURNAL_ACCESS_TOKEN`). The `/login` page posts it to
-`/api/login`, which validates it (rate-limited, constant-time) and issues an
+`/api/login`, which validates it (rate-limited via a durable Postgres counter
+that holds across serverless cold starts, constant-time) and issues an
 HMAC-signed, 30-day session in an httpOnly cookie — the raw secret is never
 stored client-side, and rotating `SESSION_SECRET` invalidates all sessions.
 `middleware.ts` redirects unauthenticated page requests to `/login`; API routes

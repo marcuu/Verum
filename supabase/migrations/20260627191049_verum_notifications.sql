@@ -1,11 +1,3 @@
--- Verum notifications schema (R1 framework + R2 daily reminder).
--- Run in the Supabase SQL editor. RLS stays enabled with no policies on
--- verum_* tables; all access is via the service-role key (server-only).
---
--- Preference fields for later use cases (rescue / weekly / quote / backup) are
--- included now so the schema does not churn when those releases land. Only
--- timezone / daily_* are wired up to product behaviour in R1/R2.
-
 create table if not exists verum_notification_preferences (
   id boolean primary key default true,
   timezone text not null default 'Europe/London',
@@ -56,7 +48,6 @@ create table if not exists verum_notification_deliveries (
   notification_type text not null,
   logical_day date,
   logical_week text,
-  logical_month text,
   payload jsonb not null default '{}',
   status text not null default 'sent',
   error text,
@@ -70,14 +61,3 @@ where logical_day is not null;
 create unique index if not exists verum_notification_one_weekly_delivery
 on verum_notification_deliveries(subscription_id, notification_type, logical_week)
 where logical_week is not null;
-
-create unique index if not exists verum_notification_one_monthly_delivery
-on verum_notification_deliveries(subscription_id, notification_type, logical_month)
-where logical_month is not null;
-
--- Match the other verum_* tables: RLS enabled with no policies, so the anon key
--- cannot read or write. All access is via the service-role key (server-only),
--- which bypasses RLS.
-alter table verum_notification_preferences enable row level security;
-alter table verum_notification_subscriptions enable row level security;
-alter table verum_notification_deliveries enable row level security;
