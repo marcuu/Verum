@@ -61,12 +61,15 @@ body {
   padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* ---- shared overline label for each zone ---- */
+/* ---- shared overline label for each zone ----
+   text-decoration reset: Tailwind v4 ships an `overline` utility, so this
+   class name otherwise draws a literal line above the label. */
 .overline {
   color: var(--muted);
   font-size: 0.72rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
+  text-decoration: none;
   margin: 0;
 }
 
@@ -85,15 +88,18 @@ header {
 }
 
 h1 {
-  font-size: 1.2rem;
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
   font-weight: 600;
   margin: 0;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.015em;
 }
 
 .sub {
   color: var(--muted);
   margin: 0.25rem 0 0;
+  font-family: var(--font-serif);
+  font-style: italic;
   font-size: 0.85rem;
 }
 
@@ -165,7 +171,7 @@ button:disabled {
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
-  min-width: 11rem;
+  min-width: 13.5rem;
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: var(--r);
@@ -301,14 +307,10 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.streak-flame {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
 .streak-num {
   font-weight: 600;
-  color: var(--ink);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
 .streak.logged .streak-state {
@@ -380,8 +382,8 @@ button:disabled {
 
 .past-when {
   flex-shrink: 0;
-  font-weight: 600;
-  color: var(--ink-2);
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .past-when::after {
@@ -393,6 +395,9 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--ink-2);
 }
 
 .past-row.open .past-preview {
@@ -464,6 +469,7 @@ button:disabled {
 
 .qText {
   font-family: var(--font-serif);
+  font-style: italic;
   font-size: 1.1rem;
   line-height: 1.5;
   color: var(--ink-2);
@@ -736,7 +742,7 @@ li {
 .day {
   color: var(--muted);
   font-size: 0.8rem;
-  min-width: 6.5ch;
+  min-width: 5.6rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1059,17 +1065,17 @@ li:focus-within .actions {
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--bg) 78%, transparent) 0%,
-      color-mix(in srgb, var(--bg) 52%, transparent) 100%
+      color-mix(in srgb, var(--bg) 52%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 30%, transparent) 100%
     );
-  backdrop-filter: blur(32px) saturate(1.9);
-  -webkit-backdrop-filter: blur(32px) saturate(1.9);
-  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  backdrop-filter: blur(40px) saturate(2.1);
+  -webkit-backdrop-filter: blur(40px) saturate(2.1);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   border-radius: 999px;
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 16px 48px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
     inset 0 -1px 1px rgba(0, 0, 0, 0.04);
 }
 
@@ -1078,14 +1084,14 @@ li:focus-within .actions {
     background:
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--bg) 70%, transparent) 0%,
-        color-mix(in srgb, var(--bg) 45%, transparent) 100%
+        color-mix(in srgb, var(--bg) 48%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 28%, transparent) 100%
       );
-    border-color: color-mix(in srgb, var(--ink) 14%, transparent);
+    border-color: color-mix(in srgb, var(--ink) 12%, transparent);
     box-shadow:
-      0 12px 40px rgba(0, 0, 0, 0.4),
-      0 2px 8px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 16px 48px rgba(0, 0, 0, 0.45),
+      0 2px 6px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
       inset 0 -1px 1px rgba(0, 0, 0, 0.3);
   }
 }
@@ -1101,14 +1107,13 @@ li:focus-within .actions {
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--ink) 12%, transparent) 0%,
-      color-mix(in srgb, var(--ink) 6%, transparent) 100%
+      color-mix(in srgb, var(--ink) 9%, transparent) 0%,
+      color-mix(in srgb, var(--ink) 4%, transparent) 100%
     );
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.05),
-    0 2px 8px rgba(0, 0, 0, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 4px rgba(0, 0, 0, 0.06);
   transform: translateX(calc(var(--active-index, 0) * var(--nav-tab-w)));
   transition:
     transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -1121,14 +1126,13 @@ li:focus-within .actions {
     background:
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--ink) 20%, transparent) 0%,
-        color-mix(in srgb, var(--ink) 10%, transparent) 100%
+        color-mix(in srgb, var(--ink) 16%, transparent) 0%,
+        color-mix(in srgb, var(--ink) 8%, transparent) 100%
       );
-    border-color: color-mix(in srgb, var(--ink) 18%, transparent);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.25),
-      0 2px 8px rgba(0, 0, 0, 0.3);
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.22),
+      0 1px 4px rgba(0, 0, 0, 0.25);
   }
 }
 
@@ -1421,9 +1425,10 @@ li:focus-within .actions {
 
 .year-title {
   margin: 0.35rem 0 0;
-  font-size: 1.6rem;
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
   font-weight: 600;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.01em;
 }
 
 .year-range {
@@ -1496,10 +1501,12 @@ li:focus-within .actions {
 
 .year-entry h2 {
   margin: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.92rem;
+  font-weight: 500;
   color: var(--muted);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
 }
 
 .year-entry p {
