@@ -97,6 +97,7 @@ export default function QuoteComposer({
         <textarea
           ref={textRef}
           className="composer-text"
+          aria-label="Quote text"
           placeholder="The words worth keeping…"
           rows={3}
           maxLength={600}
@@ -114,6 +115,7 @@ export default function QuoteComposer({
         <input
           className="composer-author"
           type="text"
+          aria-label="Author"
           placeholder="Author (optional)"
           maxLength={120}
           value={author}

@@ -7,14 +7,27 @@ export const STREAK_THRESHOLD = 3;   // hide streak below this
 export const STREAK_GRACE_DAYS = 1;  // max missed days per rolling window
 export const STREAK_GRACE_WINDOW = 7; // window size in calendar days
 
+// Entries are unbounded prose, but not unbounded payloads: a cap well above
+// any real journal day keeps a bad client from storing megabytes per row.
+export const MAX_ENTRY_CHARS = 64_000;
+
 // Server-only config derived from environment variables.
 
-export const CORE_THRESHOLD = parseInt(
-  process.env.QUOTES_CORE_THRESHOLD ?? "3",
-  10
-);
+// A mistyped env value must fall back, not propagate NaN into SQL params.
+function intFromEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw === undefined || raw === "") return fallback;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n)) {
+    console.warn(`[verum] ${name}="${raw}" is not a number; using ${fallback}`);
+    return fallback;
+  }
+  return n;
+}
 
-export const AVOID_DAYS = parseInt(process.env.QUOTES_AVOID_DAYS ?? "14", 10);
+export const CORE_THRESHOLD = intFromEnv("QUOTES_CORE_THRESHOLD", 3);
+
+export const AVOID_DAYS = intFromEnv("QUOTES_AVOID_DAYS", 14);
 
 // Table names (verum_ prefixed, co-located in the public schema).
 export const T_ENTRIES = "verum_entries";

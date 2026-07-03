@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft, Printer } from "lucide-react";
 import type { CSSProperties } from "react";
 import { api } from "@/lib/client";
@@ -124,9 +125,9 @@ export default function YearReview() {
     return (
       <div className="wrap year-review">
         <p className="empty">No such year.</p>
-        <a className="year-back" href="/?tab=life">
+        <Link className="year-back" href="/?tab=life">
           <ArrowLeft size={15} aria-hidden="true" /> Life
-        </a>
+        </Link>
       </div>
     );
   }
@@ -134,9 +135,9 @@ export default function YearReview() {
   return (
     <div className="wrap year-review">
       <header className="year-head">
-        <a className="year-back" href="/?tab=life" aria-label="Back to Life">
+        <Link className="year-back" href="/?tab=life" aria-label="Back to Life">
           <ArrowLeft size={15} aria-hidden="true" /> Life
-        </a>
+        </Link>
         <button
           className="ghost year-print"
           type="button"

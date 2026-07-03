@@ -33,14 +33,15 @@ function daysBetween(a: string, b: string): number {
 
 // Walk backward from `anchor`, counting days that have entries.
 // Up to STREAK_GRACE_DAYS missed days per STREAK_GRACE_WINDOW-day rolling
-// window are tolerated without breaking the run.
-function graceRun(set: Set<string>, anchor: string): number {
+// window are tolerated without breaking the run. `maxDays` bounds the walk;
+// callers size it to the entry span so a long-lived journal can't outgrow it.
+function graceRun(set: Set<string>, anchor: string, maxDays: number): number {
   let count = 0;
   let cursor = anchor;
   let gapsInWindow = 0;
   const win: boolean[] = [];
 
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < maxDays; i++) {
     const has = set.has(cursor);
     win.push(has);
     if (win.length > STREAK_GRACE_WINDOW) {
@@ -73,7 +74,12 @@ export function computeStreak(days: Iterable<string>, today: string): StreakInfo
     : set.has(yesterday)
     ? yesterday
     : null;
-  const current = anchor ? graceRun(set, anchor) : 0;
+  // The walk can never need more steps than the span back to the earliest
+  // entry (plus one grace window of slack).
+  const span = anchor && sorted.length
+    ? daysBetween(sorted[0], anchor) + 1 + STREAK_GRACE_WINDOW
+    : 0;
+  const current = anchor ? graceRun(set, anchor, Math.max(span, 1)) : 0;
 
   // ── Best streak (forward pass with same grace model) ──────────────────────
   let best = 0;

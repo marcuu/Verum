@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { T_ENTRIES } from "@/lib/constants";
+import { isValidDayString } from "@/lib/dates";
 import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
@@ -16,6 +17,9 @@ export async function GET(
   if (unauth) return unauth;
 
   const { day } = await params;
+  if (!isValidDayString(day)) {
+    return NextResponse.json({ error: "invalid day" }, { status: 400 });
+  }
   const db = getSupabaseAdmin();
 
   const { data, error } = await db
@@ -39,6 +43,9 @@ export async function DELETE(
   if (unauth) return unauth;
 
   const { day } = await params;
+  if (!isValidDayString(day)) {
+    return NextResponse.json({ error: "invalid day" }, { status: 400 });
+  }
   const db = getSupabaseAdmin();
 
   const { error } = await db.from(T_ENTRIES).delete().eq("day", day);

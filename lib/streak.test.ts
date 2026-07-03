@@ -65,6 +65,20 @@ describe("computeStreak", () => {
     expect(s.lastDay).toBe("2026-06-21");
   });
 
+  it("counts runs longer than 400 days without truncating", () => {
+    // Regression: the walk used to stop after 400 iterations, silently
+    // capping any streak past ~400 days.
+    const days: string[] = [];
+    const d = new Date("2026-07-02T00:00:00Z");
+    for (let i = 0; i < 600; i++) {
+      days.push(d.toISOString().slice(0, 10));
+      d.setUTCDate(d.getUTCDate() - 1);
+    }
+    const s = computeStreak(days, TODAY);
+    expect(s.current).toBe(600);
+    expect(s.best).toBe(600);
+  });
+
   it("is order-independent and ignores duplicates and blanks", () => {
     const s = computeStreak(
       ["2026-07-02", "2026-06-30", "2026-07-01", "2026-07-02", ""],
