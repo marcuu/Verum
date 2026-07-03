@@ -42,6 +42,7 @@ const TYPE_LABELS: Record<string, string> = {
   streak_rescue: "Streak rescue",
   weekly_reflection: "Weekly reflection",
   monthly_backup: "Monthly backup",
+  system_alert: "System alert",
   test: "Test",
 };
 

@@ -12,7 +12,7 @@ import {
 import { CAPTURE_PROMPT } from "@/lib/constants";
 import { computeStreak } from "@/lib/streak";
 import { birthdayWindow } from "@/lib/lifeWeeks";
-import { excerpt } from "@/lib/notifications/reflection";
+import { excerpt } from "@/lib/text";
 import type { StreakInfo } from "@/lib/streak";
 import type { Entry, Quote } from "@/lib/types";
 import QuoteBox from "@/components/QuoteBox";

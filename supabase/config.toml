@@ -1,0 +1,4 @@
+# Minimal Supabase CLI config so `supabase link` / `supabase db push` work
+# against supabase/migrations. Local-stack settings are intentionally omitted;
+# run `supabase init --force` if you ever want a full local dev stack.
+project_id = "verum"

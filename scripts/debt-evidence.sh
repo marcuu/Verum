@@ -33,8 +33,9 @@ npm outdated || true
 section "Observability (console-only logging is the debt signal)"
 echo "console call sites: $(grep -rn 'console\.' --include='*.ts' app lib middleware.ts | wc -l || true)"
 
-section "Schema artifacts (run-once SQL files = unmanaged migrations)"
-ls docs/*.sql
+section "Schema artifacts (ordered migrations; stray docs/*.sql would be debt)"
+ls supabase/migrations/ 2>/dev/null || echo "NO migrations dir"
+ls docs/*.sql 2>/dev/null || echo "no stray SQL in docs/ (good)"
 
 section "CI"
 ls .github/workflows/ 2>/dev/null || echo "NO CI"

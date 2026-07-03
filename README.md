@@ -57,10 +57,23 @@ Four tables in the Supabase `public` schema, namespaced with a `verum_` prefix
 - `verum_quotes_daily_pick` — `day (pk), quote_id (fk), picked_at`
 
 Plus the `verum_pick_daily_quote(day, core_threshold, avoid_days)` SQL function
-that selects and records the day's quote atomically. For existing projects, run `docs/supabase-life-markers.sql` once to add the life-marker table.
+that selects and records the day's quote atomically, notification tables
+(`verum_notification_preferences`, `verum_notification_subscriptions`,
+`verum_notification_deliveries`), and a private `verum-backups` Storage bucket.
 
-Notification tables (`verum_notification_preferences`, `verum_notification_subscriptions`,
-`verum_notification_deliveries`) — run `docs/supabase-notifications.sql` once to add them.
+**Schema lives in `supabase/migrations/`** (ordered, one file per change).
+Apply with the Supabase CLI:
+
+```bash
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
+
+For a project that predates the migration history (this one), baseline first —
+`supabase migration repair --status applied <version>` for each migration that
+matches what's already live — so `db push` only applies what's genuinely new.
+The `..._baseline_core.sql` file is a guarded reconstruction of the original
+Flask-era schema; on drift, prefer the live definition and repair.
 
 RLS is enabled with **no policies**, so the anon/publishable key cannot read or
 write. All access is via the service-role key from the server-side API routes,
@@ -84,7 +97,7 @@ must never miss.
 Verum is installable (`app/manifest.ts`, `public/sw.js`) and sends Web Push
 reminders. Setup:
 
-1. Run `docs/supabase-notifications.sql` in the Supabase SQL editor.
+1. Apply the migrations in `supabase/migrations/` (see Database above).
 2. Generate VAPID keys: `npx web-push generate-vapid-keys`.
 3. Set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, `WEB_PUSH_SUBJECT`
    and `CRON_SECRET` (locally and in Vercel).
@@ -100,6 +113,29 @@ checks, weekday/day-of-month) and per-period dedupe; the daily reminder sends
 only if there's no entry for the local day — and subscriptions the push
 service reports as gone (404/410) are disabled. An external scheduler must
 send `Authorization: Bearer <CRON_SECRET>`.
+
+**Backups are automatic.** The monthly job writes a JSON snapshot (entries,
+quotes, life markers) to the private `verum-backups` Storage bucket — one
+object per month, upserted — and the push notification reports the outcome
+instead of asking you to export by hand. Manual JSON/Markdown exports remain
+in the header menu.
+
+**The system pages its owner.** If a cron job throws, the route returns 500
+(so Vercel records the failed run) and sends a priority `system_alert` push —
+at most one per day — pointing at the delivery history panel.
+
+## Operations
+
+- **Logs**: Vercel → Project → Logs (all `[verum]`-prefixed). Delivery
+  history is also visible in-app under Reminders.
+- **A reminder didn't arrive**: check Reminders → Delivery history; a failed
+  row shows the push-service error. Disable/re-enable reminders on the device
+  to re-subscribe.
+- **Restore from backup**: Supabase Dashboard → Storage → `verum-backups`,
+  download the latest `verum-backup-YYYY-MM.json`; its arrays match the
+  tables one-to-one.
+- **Token leaked**: rotate `JOURNAL_ACCESS_TOKEN` and `SESSION_SECRET` in
+  Vercel and redeploy — every outstanding session dies with the secret.
 
 ## Auth
 

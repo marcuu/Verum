@@ -118,6 +118,31 @@ time-picker settings, vote lost-update race, unvalidated entry `day`/size,
 swallowed delivery-log errors, duplicate initial fetch, NaN-able env parsing,
 400-day streak cap, no CI, no lint, missing input a11y names.
 
+**Update, same day (debt-payoff pass):**
+
+- **TD-1 PAID** — schema now lives in `supabase/migrations/` (ordered,
+  CLI-appliable), including a guarded baseline reconstruction of the core
+  tables + daily-pick RPC that were never in the repo at all; the run-once
+  files in `docs/` are gone. README documents the `link`/`db push`/`repair`
+  workflow.
+- **TD-2 PAID** — a throwing cron job now logs, returns 500 (platform records
+  the failure), and pages the owner via a priority `system_alert` push on the
+  app's own channel, deduped to one per day by the existing delivery index.
+- **TD-3 PAID** — the monthly job performs the backup itself: JSON snapshot
+  of entries/quotes/life-markers upserted to the private `verum-backups`
+  Storage bucket; the notification is now a receipt (and a priority alert on
+  failure), not a chore. Restore path documented in README → Operations.
+- **TD-4 PARTIALLY PAID** — 13 route-level tests (`test/entriesRoute.test.ts`)
+  now pin the auth gate, tampered-cookie rejection, CSRF origin check,
+  public-read scoping (export stays private), and the entry validation
+  matrix, using real HMAC session values. Remaining: the other write routes.
+- **TD-12 PAID** — `excerpt`/`lastLineOf` moved to `lib/text.ts`; the UI no
+  longer imports from the notifications module.
+
+TD-6 (WAF rule) remains a dashboard action; TD-5 and TD-7 remain scheduled.
+Data & schema and Operability should be re-scored at the next quarterly run
+with these in place.
+
 ### History
 
 | Date | Composite | Grade | Notes |
