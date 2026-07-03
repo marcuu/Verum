@@ -21,17 +21,14 @@ export default function StreakBanner({ streak }: { streak: StreakInfo | null }) 
 
   // At or above threshold: the streak number is the single status signal.
   // "logged today" is redundant here — the streak implies it.
-  const dayLabel = current === 1 ? "day" : "days";
   return (
     <div
       className={"streak" + (loggedToday ? " logged" : "")}
       role="status"
-      aria-label={`${current} ${dayLabel} streak`}
+      aria-label={`${current}-day streak`}
     >
-      <span className="streak-flame" aria-hidden="true">🔥</span>
       <span>
-        <span className="streak-num">{current}</span>{" "}
-        {dayLabel}
+        <span className="streak-num">{current}</span>-day streak
       </span>
     </div>
   );

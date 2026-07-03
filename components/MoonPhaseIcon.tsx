@@ -1,6 +1,7 @@
 import { getMoonPhase } from "@/lib/moonPhase";
 
-const SIZE = 26;
+// Small and quiet: the moon accompanies the wordmark, it doesn't compete.
+const SIZE = 20;
 const R = SIZE / 2;
 
 export default function MoonPhaseIcon() {
@@ -58,9 +59,16 @@ export default function MoonPhaseIcon() {
       style={{ flexShrink: 0 }}
     >
       {/* Background circle */}
-      <circle cx={R} cy={R} r={R} fill="var(--bg)" stroke="var(--ink)" strokeWidth="1.5" />
+      <circle
+        cx={R}
+        cy={R}
+        r={R - 0.6}
+        fill="var(--bg)"
+        stroke="var(--ink-2)"
+        strokeWidth="1.2"
+      />
       {/* Lit portion */}
-      <path d={d} fill="var(--ink)" transform={`translate(0, 0)`} />
+      <path d={d} fill="var(--ink-2)" />
     </svg>
   );
 }

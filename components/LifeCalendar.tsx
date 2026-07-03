@@ -259,9 +259,11 @@ export default function LifeCalendar({ entries }: { entries: Entry[] }) {
           .life .cell.current { animation: none; }
         }
         .life-remaining {
-          color: var(--muted);
-          font-size: 0.85rem;
-          margin: 0 0 0.35rem;
+          color: var(--ink-2);
+          font-family: var(--font-serif);
+          font-style: italic;
+          font-size: 1.05rem;
+          margin: 0 0 0.4rem;
         }
       `}</style>
       <div

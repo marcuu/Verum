@@ -41,7 +41,7 @@ export default function QuoteBox({
   if (!loading && !quote) return null;
 
   const disabled = loading || busy || !quote;
-  const text = loading ? "Loading quote…" : `"${quote!.text}"`;
+  const text = loading ? "Loading quote…" : `“${quote!.text}”`;
   const author = !loading && quote!.author ? `— ${quote!.author}` : "";
 
   return (

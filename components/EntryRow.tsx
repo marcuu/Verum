@@ -4,6 +4,19 @@ import { useRef } from "react";
 import { Trash2 } from "lucide-react";
 import type { Entry } from "@/lib/types";
 
+// A journal shows dates a person would write, not database keys.
+function formatDay(day: string): string {
+  const [y, m, d] = day.split("-").map(Number);
+  const date = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  if (Number.isNaN(date.getTime())) return day;
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export default function EntryRow({
   entry,
   onSave,
@@ -33,7 +46,9 @@ export default function EntryRow({
 
   return (
     <li>
-      <div className="day">{entry.day}</div>
+      <div className="day" title={entry.day}>
+        {formatDay(entry.day)}
+      </div>
       <div
         className="text"
         contentEditable
