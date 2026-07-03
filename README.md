@@ -74,7 +74,9 @@ cache-first; **API responses are never cached**), so the installed PWA opens
 offline. A save that can't reach the network is queued on-device
 (`lib/offline.ts`, keyed by day, last write wins) and replayed automatically
 when the connection returns — the one-entry-per-day upsert makes replays
-idempotent. Reading the record still needs a connection; it's capture that
+idempotent. Queued entries wait in plaintext `localStorage` on the device — a
+deliberate trade-off for a personal device; don't enable capture on shared
+machines. Reading the record still needs a connection; it's capture that
 must never miss.
 
 ## Notifications (PWA + Web Push)
@@ -88,14 +90,16 @@ reminders. Setup:
    and `CRON_SECRET` (locally and in Vercel).
 4. Open the app → **Reminders** → *Enable reminders*, then *Send test*.
 
-The daily reminder is driven by `vercel.json`, a single once-daily cron at
-`30 19 * * *` (UTC) hitting `/api/cron/notifications`. Because a fixed UTC time
-drifts an hour across BST/GMT, the route uses a wide Europe/London window so it
-still fires near the configured time (default 20:30). It sends only if reminders
-are enabled, there's no entry for the local day, and one hasn't already gone out
-to that subscription — and disables subscriptions the push service reports as
-gone (404/410). On Vercel Pro you can switch to `*/15 * * * *` for minute-level
-precision; an external scheduler must send `Authorization: Bearer <CRON_SECRET>`.
+Reminders are driven by `vercel.json`: one once-daily cron per job (daily
+reminder 19:30, streak rescue 21:00, weekly reflection 17:00, monthly backup
+09:00 — all UTC), each hitting `/api/cron/notifications?job=…`. **Delivery
+times are fixed by this schedule**, not user-configurable (the settings UI
+shows them as facts), and a fixed UTC time lands an hour later on the clock
+during BST. Jobs apply their own eligibility (enabled flag, entry/streak
+checks, weekday/day-of-month) and per-period dedupe; the daily reminder sends
+only if there's no entry for the local day — and subscriptions the push
+service reports as gone (404/410) are disabled. An external scheduler must
+send `Authorization: Bearer <CRON_SECRET>`.
 
 ## Auth
 
@@ -115,6 +119,9 @@ npm install
 cp .env.example .env.local   # then fill in the values
 npm run dev                  # http://localhost:3000
 ```
+
+CI (GitHub Actions) runs `lint`, `typecheck`, `test`, and `build` on every
+pull request; run the same four scripts locally before pushing.
 
 Get the Supabase keys from **Dashboard → Project Settings → API**. The
 `SUPABASE_SERVICE_ROLE_KEY` is secret — keep it out of the browser and out of git.

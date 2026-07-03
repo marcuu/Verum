@@ -59,6 +59,7 @@ function LoginForm() {
       <form onSubmit={onSubmit} className="login-form">
         <input
           type="password"
+          aria-label="Access token"
           placeholder="Access token"
           value={token}
           onChange={(e) => setToken(e.target.value)}

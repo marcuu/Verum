@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileText, LogOut, Search, CalendarDays, List, Grid3x3, Bell, Settings, Quote as QuoteIcon } from "lucide-react";
+import Link from "next/link";
+import { Search } from "lucide-react";
 import { api, todayISO, yesterdayISO } from "@/lib/client";
 import {
   queuePendingEntry,
@@ -22,11 +23,11 @@ import StreakBanner from "@/components/StreakBanner";
 import NotificationSettings from "@/components/NotificationSettings";
 import QuoteComposer from "@/components/QuoteComposer";
 import MoonPhaseIcon from "@/components/MoonPhaseIcon";
+import HeaderMenu from "@/components/HeaderMenu";
+import BottomNav, { type Tab } from "@/components/BottomNav";
 
 type FlashAction = { label: string; run: () => void | Promise<void> };
 type FlashState = { message: string; action?: FlashAction };
-
-type Tab = "today" | "journal" | "life" | "reminders";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
@@ -65,8 +66,6 @@ export default function Home() {
   const searchRef = useRef<HTMLInputElement>(null);
   const entryRef = useRef<HTMLInputElement>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const headerMenuRef = useRef<HTMLDivElement>(null);
-  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
 
   // ---- inline feedback (replaces alert/confirm) ----
   const showFlash = useCallback(
@@ -80,17 +79,6 @@ export default function Home() {
   useEffect(() => () => {
     if (flashTimer.current) clearTimeout(flashTimer.current);
   }, []);
-
-  useEffect(() => {
-    if (!headerMenuOpen) return;
-    function onPointerDown(e: PointerEvent) {
-      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
-        setHeaderMenuOpen(false);
-      }
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [headerMenuOpen]);
 
   // ---- data ----
   // Returns today's entry if found (only on unfiltered fetches).
@@ -162,8 +150,15 @@ export default function Home() {
     return () => clearTimeout(t);
   }, [quoteJustEarned, quote]);
 
-  // debounced search
+  // Debounced search. Skipped on first render: the initial-load effect above
+  // already fetches the unfiltered list, so running here too would issue a
+  // duplicate full-journal request racing the first one.
+  const searchBooted = useRef(false);
   useEffect(() => {
+    if (!searchBooted.current) {
+      searchBooted.current = true;
+      return;
+    }
     const t = setTimeout(() => {
       loadEntries(search.trim()).catch(() => {});
     }, 200);
@@ -563,68 +558,13 @@ export default function Home() {
           <h1>Verum</h1>
         </div>
         <div className="utility">
-          <div className="headerMenuWrap" ref={headerMenuRef}>
-            <button
-              className="ghost"
-              type="button"
-              aria-label="Settings"
-              title="Settings"
-              aria-expanded={headerMenuOpen}
-              aria-haspopup="menu"
-              onClick={() => setHeaderMenuOpen((o) => !o)}
-            >
-              <Settings size={18} />
-            </button>
-            {headerMenuOpen && (
-              <div className="headerMenu" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="headerMenuItem"
-                  onClick={() => { setHeaderMenuOpen(false); setComposerOpen(true); }}
-                >
-                  <QuoteIcon size={15} aria-hidden="true" />
-                  Add a quote
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="headerMenuItem"
-                  onClick={() => { setHeaderMenuOpen(false); setTab("reminders"); }}
-                >
-                  <Bell size={15} aria-hidden="true" />
-                  Reminders
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="headerMenuItem"
-                  onClick={() => { setHeaderMenuOpen(false); onExport(); }}
-                >
-                  <Download size={15} aria-hidden="true" />
-                  Export (JSON)
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="headerMenuItem"
-                  onClick={() => { setHeaderMenuOpen(false); onExportMarkdown(); }}
-                >
-                  <FileText size={15} aria-hidden="true" />
-                  Export (Markdown)
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="headerMenuItem headerMenuItem--danger"
-                  onClick={() => { setHeaderMenuOpen(false); onLogout(); }}
-                >
-                  <LogOut size={15} aria-hidden="true" />
-                  Log out
-                </button>
-              </div>
-            )}
-          </div>
+          <HeaderMenu
+            onAddQuote={() => setComposerOpen(true)}
+            onOpenReminders={() => setTab("reminders")}
+            onExportJson={onExport}
+            onExportMarkdown={onExportMarkdown}
+            onLogout={onLogout}
+          />
         </div>
       </header>
 
@@ -650,6 +590,7 @@ export default function Home() {
               ref={entryRef}
               autoFocus
               type="text"
+              aria-label="Today's entry"
               placeholder={CAPTURE_PROMPT}
               autoComplete="off"
               value={draft}
@@ -697,6 +638,7 @@ export default function Home() {
             <div className="capture capture-row moment-row">
               <input
                 type="text"
+                aria-label="Add a moment"
                 placeholder="Add a moment…"
                 autoComplete="off"
                 value={momentDraft}
@@ -723,6 +665,7 @@ export default function Home() {
             <textarea
               ref={editRef}
               className="capture-textarea"
+              aria-label="Today's entry"
               placeholder={CAPTURE_PROMPT}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -762,6 +705,7 @@ export default function Home() {
             <input
               ref={catchupRef}
               type="text"
+              aria-label="Yesterday's entry"
               placeholder="What happened yesterday?"
               autoComplete="off"
               value={catchupDraft}
@@ -791,10 +735,10 @@ export default function Home() {
 
         {/* ── Birthday moment: the year that just closed, offered quietly ── */}
         {birthday.active && birthday.closedAge !== null && (
-          <a className="catchup-line birthday-line" href={`/year/${birthday.closedAge}`}>
+          <Link className="catchup-line birthday-line" href={`/year/${birthday.closedAge}`}>
             A year of your life just closed — see age {birthday.closedAge} against
             the calendar
-          </a>
+          </Link>
         )}
 
         {hasLoggedToday && (
@@ -834,6 +778,7 @@ export default function Home() {
             id="search"
             ref={searchRef}
             type="search"
+            aria-label="Search previous entries"
             placeholder="Search previous entries…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -894,43 +839,7 @@ export default function Home() {
         <LifeCalendar entries={entries} />
       </div>
 
-      {/* ===== BOTTOM NAV — liquid glass pill with sliding bubble ===== */}
-      {(() => {
-        const navItems: { id: Tab; label: string; Icon: typeof CalendarDays }[] = [
-          { id: "today", label: "Today", Icon: CalendarDays },
-          { id: "journal", label: "Journal", Icon: List },
-          { id: "life", label: "Life", Icon: Grid3x3 },
-        ];
-        const activeIndex = navItems.findIndex((it) => it.id === tab);
-        return (
-          <nav
-            className="bottom-nav"
-            aria-label="Sections"
-            style={{ "--nav-count": navItems.length } as React.CSSProperties}
-          >
-            <span
-              className="nav-bubble"
-              aria-hidden="true"
-              style={{
-                "--active-index": activeIndex,
-                opacity: activeIndex < 0 ? 0 : 1,
-              } as React.CSSProperties}
-            />
-            {navItems.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                className={"nav-tab" + (tab === id ? " active" : "")}
-                aria-current={tab === id ? "page" : undefined}
-                onClick={() => setTab(id)}
-              >
-                <Icon size={20} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </nav>
-        );
-      })()}
+      <BottomNav tab={tab} onSelect={setTab} />
 
       <QuoteComposer
         open={composerOpen}

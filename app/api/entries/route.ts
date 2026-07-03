@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { utcTs, localDay } from "@/lib/dates";
-import { T_ENTRIES } from "@/lib/constants";
+import { utcTs, localDay, isPlausibleEntryDay } from "@/lib/dates";
+import { T_ENTRIES, MAX_ENTRY_CHARS } from "@/lib/constants";
 import { serverError } from "@/lib/apiError";
 
 export const runtime = "nodejs";
@@ -45,6 +45,14 @@ export async function POST(req: NextRequest) {
 
   if (!text) {
     return NextResponse.json({ error: "text required" }, { status: 400 });
+  }
+  if (text.length > MAX_ENTRY_CHARS) {
+    return NextResponse.json({ error: "text too long" }, { status: 400 });
+  }
+  // A malformed or wildly out-of-range day should 400 here, not 500 at the
+  // database (or silently create an entry the UI can never surface).
+  if (!isPlausibleEntryDay(day)) {
+    return NextResponse.json({ error: "invalid day" }, { status: 400 });
   }
 
   const ts = utcTs();

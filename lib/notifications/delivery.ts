@@ -102,21 +102,29 @@ export async function sendLoggedNotification(
       { urgency: isPriority ? "high" : "normal" }
     );
 
-    await db
+    // If this log write fails, the dedupe guard above stops working and the
+    // next cron run re-sends — make that failure visible, don't swallow it.
+    const { error: logErr } = await db
       .from(T_NOTIFICATION_DELIVERIES)
       .insert({ ...deliveryRow, status: "sent" });
+    if (logErr) {
+      console.error("[verum] notifications.delivery.log(sent):", logErr);
+    }
 
     return { status: "sent" };
   } catch (err: unknown) {
     const message = (err as { message?: string })?.message ?? String(err);
     const statusCode = (err as { statusCode?: number })?.statusCode;
 
-    await db
+    const { error: logErr } = await db
       .from(T_NOTIFICATION_DELIVERIES)
       .insert({ ...deliveryRow, status: "failed", error: message });
+    if (logErr) {
+      console.error("[verum] notifications.delivery.log(failed):", logErr);
+    }
 
     if (statusCode === 404 || statusCode === 410) {
-      await db
+      const { error: disableErr } = await db
         .from(T_NOTIFICATION_SUBSCRIPTIONS)
         .update({
           enabled: false,
@@ -124,6 +132,9 @@ export async function sendLoggedNotification(
           updated_at: new Date().toISOString(),
         })
         .eq("id", options.subscription.id);
+      if (disableErr) {
+        console.error("[verum] notifications.subscription.disable:", disableErr);
+      }
     }
 
     return { status: "failed", error: message };

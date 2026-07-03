@@ -27,26 +27,3 @@ export function localParts(timezone: string, date = new Date()): LocalParts {
     weekday: get("weekday"),
   };
 }
-
-// Returns true when nowHHMM falls inside
-//   [target - graceBeforeMinutes, target + windowMinutes).
-//
-// graceBeforeMinutes lets a single once-daily cron (Vercel Hobby plan) absorb
-// the BST/GMT hour shift: a job pinned to a fixed UTC time lands at either the
-// configured local hour or one hour earlier depending on DST, so a wide bracket
-// is needed to still fire. For a precise */15 cron, call with the default grace
-// of 0 and a tight window.
-export function isWithinWindow(
-  nowHHMM: string,
-  targetHHMM: string,
-  windowMinutes = 15,
-  graceBeforeMinutes = 0
-): boolean {
-  const [nh, nm] = nowHHMM.split(":").map(Number);
-  const [th, tm] = targetHHMM.slice(0, 5).split(":").map(Number);
-
-  const now = nh * 60 + nm;
-  const target = th * 60 + tm;
-
-  return now >= target - graceBeforeMinutes && now < target + windowMinutes;
-}

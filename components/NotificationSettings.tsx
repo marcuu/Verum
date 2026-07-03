@@ -11,17 +11,23 @@ import {
 type Preferences = {
   timezone: string;
   daily_enabled: boolean;
-  daily_time: string;
   rescue_enabled: boolean;
-  rescue_time: string;
   rescue_min_streak: number;
   weekly_enabled: boolean;
   weekly_day: number;
-  weekly_time: string;
   backup_enabled: boolean;
   backup_day_of_month: number;
-  backup_time: string;
 };
+
+// Delivery times are fixed by the once-daily crons in vercel.json (UTC),
+// shown here in UK local time. They are facts to display, not settings to
+// edit — a time picker wired to nothing is worse than no picker.
+const DELIVERY_TIMES = {
+  daily: "20:30",
+  rescue: "22:00",
+  weekly: "18:00",
+  backup: "10:00",
+} as const;
 
 type Delivery = {
   id: string;
@@ -249,14 +255,9 @@ export default function NotificationSettings() {
                   Daily reminder
                 </label>
                 <p className="empty">
-                  A gentle prompt if you have not written today.
+                  A gentle prompt if you have not written today. Delivered
+                  around {DELIVERY_TIMES.daily}.
                 </p>
-                <input
-                  type="time"
-                  aria-label="Daily reminder time"
-                  value={prefs.daily_time.slice(0, 5)}
-                  onChange={(e) => savePrefs({ daily_time: e.target.value })}
-                />
               </div>
 
               <details
@@ -282,16 +283,9 @@ export default function NotificationSettings() {
                     </label>
                     <p className="empty">
                       A late nudge if an active streak is about to break.
+                      Delivered around {DELIVERY_TIMES.rescue}.
                     </p>
                     <div className="notification-row">
-                      <input
-                        type="time"
-                        aria-label="Streak rescue time"
-                        value={prefs.rescue_time.slice(0, 5)}
-                        onChange={(e) =>
-                          savePrefs({ rescue_time: e.target.value })
-                        }
-                      />
                       <label className="notification-row">
                         Min streak
                         <input
@@ -323,7 +317,8 @@ export default function NotificationSettings() {
                       Weekly reflection
                     </label>
                     <p className="empty">
-                      A once-a-week prompt to review the record.
+                      A once-a-week prompt to review the record. Delivered
+                      around {DELIVERY_TIMES.weekly}.
                     </p>
                     <div className="notification-row">
                       <select
@@ -341,14 +336,6 @@ export default function NotificationSettings() {
                         <option value={5}>Friday</option>
                         <option value={6}>Saturday</option>
                       </select>
-                      <input
-                        type="time"
-                        aria-label="Weekly reflection time"
-                        value={prefs.weekly_time.slice(0, 5)}
-                        onChange={(e) =>
-                          savePrefs({ weekly_time: e.target.value })
-                        }
-                      />
                     </div>
                   </div>
 
@@ -365,7 +352,8 @@ export default function NotificationSettings() {
                       Monthly backup
                     </label>
                     <p className="empty">
-                      A quiet reminder to export your journal.
+                      A quiet reminder to export your journal. Delivered
+                      around {DELIVERY_TIMES.backup}.
                     </p>
                     <div className="notification-row">
                       <label className="notification-row">
@@ -383,14 +371,6 @@ export default function NotificationSettings() {
                           }
                         />
                       </label>
-                      <input
-                        type="time"
-                        aria-label="Monthly backup time"
-                        value={prefs.backup_time.slice(0, 5)}
-                        onChange={(e) =>
-                          savePrefs({ backup_time: e.target.value })
-                        }
-                      />
                     </div>
                   </div>
                 </div>

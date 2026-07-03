@@ -29,31 +29,39 @@ export async function POST(
 
   const db = getSupabaseAdmin();
 
-  const { data: row, error: getErr } = await db
-    .from(T_QUOTES)
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (getErr) {
-    return serverError("quotes.vote.get", getErr);
-  }
-  if (!row) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  // Compare-and-swap: the update only applies if the score still holds the
+  // value we read, so two concurrent votes can't overwrite each other. On a
+  // miss, re-read and retry — no SQL migration needed, unlike an RPC.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: row, error: getErr } = await db
+      .from(T_QUOTES)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (getErr) {
+      return serverError("quotes.vote.get", getErr);
+    }
+    if (!row) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+
+    const { data: updated, error: updErr } = await db
+      .from(T_QUOTES)
+      .update({ score: row.score + delta, updated_at: utcTs() })
+      .eq("id", id)
+      .eq("score", row.score)
+      .select("*")
+      .maybeSingle();
+    if (updErr) {
+      return serverError("quotes.vote.update", updErr);
+    }
+    if (updated) {
+      return NextResponse.json({
+        ok: true,
+        quote: { ...updated, is_core: isCore(updated.score) },
+      });
+    }
   }
 
-  const ts = utcTs();
-  const { data: updated, error: updErr } = await db
-    .from(T_QUOTES)
-    .update({ score: row.score + delta, updated_at: ts })
-    .eq("id", id)
-    .select("*")
-    .single();
-  if (updErr) {
-    return serverError("quotes.vote.update", updErr);
-  }
-
-  return NextResponse.json({
-    ok: true,
-    quote: { ...updated, is_core: isCore(updated.score) },
-  });
+  return NextResponse.json({ error: "conflict" }, { status: 409 });
 }
