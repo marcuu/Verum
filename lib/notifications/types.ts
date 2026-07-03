@@ -5,7 +5,10 @@ export type NotificationType =
   | "daily_reminder"
   | "streak_rescue"
   | "weekly_reflection"
-  | "monthly_backup";
+  | "monthly_backup"
+  // The system paging its owner: a cron job threw. Verum's own push channel
+  // is the alerting stack — there is no other pager for a single-user app.
+  | "system_alert";
 
 export type PushPayload = {
   title: string;
@@ -29,6 +32,7 @@ export type PushUrgency = "very-low" | "low" | "normal" | "high";
 export const PRIORITY_NOTIFICATION_TYPES = new Set<NotificationType>([
   "daily_reminder",
   "streak_rescue",
+  "system_alert",
 ]);
 
 export type SubscriptionRow = {

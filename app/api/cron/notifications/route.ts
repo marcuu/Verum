@@ -12,6 +12,7 @@ import { runDailyReminder } from "@/lib/notifications/jobs/dailyReminder";
 import { runStreakRescue } from "@/lib/notifications/jobs/streakRescue";
 import { runWeeklyReflection } from "@/lib/notifications/jobs/weeklyReflection";
 import { runMonthlyBackup } from "@/lib/notifications/jobs/monthlyBackup";
+import { sendSystemAlert } from "@/lib/notifications/alert";
 import type { JobContext, JobResult } from "@/lib/notifications/types";
 
 export const runtime = "nodejs";
@@ -82,7 +83,24 @@ export async function GET(req: NextRequest) {
     return serverError("cron.subscriptions", subsError);
   }
 
-  const result = await runner({ db, prefs, local, subs: subs ?? [] });
-
-  return NextResponse.json({ ok: true, job, local, result });
+  // A throwing job must not die silently in a scheduled function: log it,
+  // page the owner over the app's own push channel (deduped to one alert per
+  // day), and return 500 so the platform records the run as failed.
+  try {
+    const result = await runner({ db, prefs, local, subs: subs ?? [] });
+    return NextResponse.json({ ok: true, job, local, result });
+  } catch (err) {
+    console.error(`[verum] cron.${job}:`, err);
+    await sendSystemAlert({
+      db,
+      subs: subs ?? [],
+      job,
+      isoDay: local.isoDay,
+      error: (err as { message?: string })?.message ?? String(err),
+    });
+    return NextResponse.json(
+      { ok: false, job, error: "job_failed" },
+      { status: 500 }
+    );
+  }
 }

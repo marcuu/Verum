@@ -1,6 +1,3 @@
--- R5 monthly backup: add a dedicated logical_month period for monthly dedupe.
--- Run once in the Supabase SQL editor (idempotent).
-
 alter table verum_notification_deliveries
 add column if not exists logical_month text;
 

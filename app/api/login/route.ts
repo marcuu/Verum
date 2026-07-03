@@ -5,7 +5,11 @@ import {
   sessionCookieName,
   SESSION_TTL_SECONDS,
 } from "@/lib/session";
-import { clearFailures, isRateLimited, recordFailure } from "@/lib/rateLimit";
+import {
+  clearLoginFailures,
+  isLoginThrottled,
+  recordLoginFailure,
+} from "@/lib/loginThrottle";
 
 export const runtime = "nodejs";
 
@@ -20,7 +24,7 @@ export async function POST(req: NextRequest) {
   const ip = clientIp(req);
   const key = `login:${ip}`;
 
-  if (isRateLimited(key)) {
+  if (await isLoginThrottled(key)) {
     console.warn(`[auth] rate-limited login attempt ip=${ip}`);
     return NextResponse.json({ error: "too_many_attempts" }, { status: 429 });
   }
@@ -28,12 +32,12 @@ export async function POST(req: NextRequest) {
   const { token } = (await req.json().catch(() => ({}))) as { token?: string };
 
   if (!(await tokenMatches(token))) {
-    recordFailure(key);
+    await recordLoginFailure(key);
     console.warn(`[auth] failed login attempt ip=${ip}`);
     return NextResponse.json({ error: "invalid_token" }, { status: 401 });
   }
 
-  clearFailures(key);
+  await clearLoginFailures(key);
 
   // Issue a derived, expiring session instead of storing the shared secret
   // in the cookie. A stolen cookie ages out and can be revoked by rotating
