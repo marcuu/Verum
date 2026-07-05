@@ -1048,7 +1048,25 @@ li:focus-within .actions {
   background: var(--entry);
 }
 
-/* ============ BOTTOM NAV — liquid glass pill ============ */
+/* ============ BOTTOM NAV — liquid glass pill ============
+   Three optical layers, matching what the real material does:
+     ::before  the glass body — the backdrop refracted (SVG lens in Chromium,
+               layered frost elsewhere), lightly tinted and inner-lit
+     ::after   the specular rim — a conic ring that catches light at the top
+               and glints along the bottom, not a uniform border
+     .nav-bubble-gel  the selection capsule — glass-on-glass, squashes like
+               gel while it travels
+   The nav element itself stays paint-free: it only positions, clips, and
+   casts the drop shadow. */
+
+/* filter definitions parked offscreen; display:none would disable them */
+.lg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .bottom-nav {
   --nav-pad-x: 0.4rem;
   --nav-pad-y: 0.4rem;
@@ -1062,83 +1080,167 @@ li:focus-within .actions {
   align-items: center;
   gap: 0;
   padding: var(--nav-pad-y) var(--nav-pad-x);
+  border-radius: 999px;
+  isolation: isolate;
+  box-shadow:
+    0 24px 44px rgba(0, 0, 0, 0.13),
+    0 6px 14px rgba(0, 0, 0, 0.07);
+}
+
+/* the glass body — kept nearly clear so the refraction has something to bend */
+.bottom-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--bg) 52%, transparent) 0%,
-      color-mix(in srgb, var(--bg) 30%, transparent) 100%
+      color-mix(in srgb, var(--bg) 34%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 18%, transparent) 100%
     );
-  backdrop-filter: blur(40px) saturate(2.1);
-  -webkit-backdrop-filter: blur(40px) saturate(2.1);
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: 999px;
+  -webkit-backdrop-filter: blur(10px) saturate(1.8) brightness(1.06);
+  backdrop-filter: blur(10px) saturate(1.8) brightness(1.06);
   box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.1),
-    0 2px 6px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.04);
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.14),
+    inset 1.5px 3px 6px -3px rgba(255, 255, 255, 0.55),
+    inset -1.5px -3px 6px -3px rgba(255, 255, 255, 0.3);
+}
+
+/* Chromium opts into true refraction (class set after feature detection):
+   the lens does the edge work, so surface blur drops way down and the
+   centre reads almost clear — the signature of the real material. */
+.bottom-nav.lens::before {
+  -webkit-backdrop-filter: url(#lg-lens) blur(3px) saturate(1.8)
+    brightness(1.06);
+  backdrop-filter: url(#lg-lens) blur(3px) saturate(1.8) brightness(1.06);
+}
+
+/* the specular rim — light from above: bright arc on top, soft glint below,
+   nearly nothing on the sides. Drawn as a masked ring so the interior stays
+   untouched. */
+.bottom-nav::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.85) 0deg,
+    rgba(255, 255, 255, 0.14) 70deg,
+    rgba(255, 255, 255, 0.5) 180deg,
+    rgba(255, 255, 255, 0.14) 290deg,
+    rgba(255, 255, 255, 0.85) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 
 @media (prefers-color-scheme: dark) {
   .bottom-nav {
+    box-shadow:
+      0 24px 44px rgba(0, 0, 0, 0.5),
+      0 6px 14px rgba(0, 0, 0, 0.3);
+  }
+
+  .bottom-nav::before {
     background:
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--bg) 48%, transparent) 0%,
-        color-mix(in srgb, var(--bg) 28%, transparent) 100%
+        color-mix(in srgb, var(--bg) 34%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 20%, transparent) 100%
       );
-    border-color: color-mix(in srgb, var(--ink) 12%, transparent);
     box-shadow:
-      0 16px 48px rgba(0, 0, 0, 0.45),
-      0 2px 6px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+      inset 0 1px 1px rgba(255, 255, 255, 0.14),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.05),
+      inset 1.5px 3px 6px -3px rgba(255, 255, 255, 0.2),
+      inset -1.5px -3px 6px -3px rgba(255, 255, 255, 0.1);
+  }
+
+  .bottom-nav::after {
+    background: conic-gradient(
+      from 0deg,
+      rgba(255, 255, 255, 0.4) 0deg,
+      rgba(255, 255, 255, 0.06) 70deg,
+      rgba(255, 255, 255, 0.22) 180deg,
+      rgba(255, 255, 255, 0.06) 290deg,
+      rgba(255, 255, 255, 0.4) 360deg
+    );
   }
 }
 
-/* The selected-page bubble — a glass capsule that slides under the active tab */
+/* The selected-page bubble: an outer track that springs into place, and an
+   inner gel capsule that replays a squash-and-settle on every move. Split in
+   two because the travel is a transition and the squash is an animation —
+   they compose freely this way. */
 .nav-bubble {
   position: absolute;
   top: var(--nav-pad-y);
   bottom: var(--nav-pad-y);
   left: var(--nav-pad-x);
   width: var(--nav-tab-w);
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ink) 9%, transparent) 0%,
-      color-mix(in srgb, var(--ink) 4%, transparent) 100%
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
-    0 1px 4px rgba(0, 0, 0, 0.06);
   transform: translateX(calc(var(--active-index, 0) * var(--nav-tab-w)));
   transition:
-    transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.5s cubic-bezier(0.32, 1.55, 0.35, 1),
     opacity 0.25s ease;
   pointer-events: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  .nav-bubble {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--ink) 16%, transparent) 0%,
-        color-mix(in srgb, var(--ink) 8%, transparent) 100%
-      );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.22),
-      0 1px 4px rgba(0, 0, 0, 0.25);
+.nav-bubble-gel {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ink) 10%, transparent) 0%,
+      color-mix(in srgb, var(--ink) 5%, transparent) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  animation: bubble-gel 0.5s cubic-bezier(0.32, 1.55, 0.35, 1);
+}
+
+@keyframes bubble-gel {
+  0% {
+    transform: scale(1, 1);
+  }
+  35% {
+    transform: scale(1.18, 0.85);
+  }
+  65% {
+    transform: scale(0.95, 1.05);
+  }
+  100% {
+    transform: scale(1, 1);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .nav-bubble {
-    transition: opacity 0.2s ease;
+@media (prefers-color-scheme: dark) {
+  .nav-bubble-gel {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ink) 17%, transparent) 0%,
+        color-mix(in srgb, var(--ink) 9%, transparent) 100%
+      );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.22),
+      0 2px 6px rgba(0, 0, 0, 0.25);
   }
 }
 
@@ -1165,6 +1267,10 @@ li:focus-within .actions {
   color: var(--ink-2);
 }
 
+.nav-tab:active {
+  transform: scale(0.93);
+}
+
 .nav-tab.active {
   color: var(--ink);
 }
@@ -1172,6 +1278,48 @@ li:focus-within .actions {
 .nav-tab.active svg {
   transform: translateY(-1px) scale(1.04);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* accessibility + capability fallbacks for the glass */
+@media (prefers-reduced-motion: reduce) {
+  .nav-bubble {
+    transition: opacity 0.2s ease;
+  }
+
+  .nav-bubble-gel {
+    animation: none;
+  }
+
+  .nav-tab:active {
+    transform: none;
+  }
+}
+
+/* user asked for less transparency: near-opaque surface, no lens, no rim */
+@media (prefers-reduced-transparency: reduce) {
+  .bottom-nav::before,
+  .bottom-nav.lens::before {
+    background: color-mix(in srgb, var(--bg) 96%, var(--ink) 4%);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .bottom-nav::after {
+    background: color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+}
+
+/* no backdrop-filter at all (old engines): solid surface, hairline rim */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .bottom-nav::before {
+    background: color-mix(in srgb, var(--bg) 94%, var(--ink) 6%);
+  }
+
+  .bottom-nav::after {
+    background: color-mix(in srgb, var(--ink) 14%, transparent);
+  }
 }
 
 /* ---- inline feedback: one quiet toast, replaces alert()/confirm() ---- */
