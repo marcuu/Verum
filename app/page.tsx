@@ -25,12 +25,18 @@ import QuoteComposer from "@/components/QuoteComposer";
 import MoonPhaseIcon from "@/components/MoonPhaseIcon";
 import HeaderMenu from "@/components/HeaderMenu";
 import BottomNav, { type Tab } from "@/components/BottomNav";
+import ColdStart from "@/components/ColdStart";
 
 type FlashAction = { label: string; run: () => void | Promise<void> };
 type FlashState = { message: string; action?: FlashAction };
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("today");
+  // Cold-start choreography. `ready` unmounts the veil; `veilLeaving` plays its
+  // fade-out; `playEntrance` staggers the Today zone in as one composed gesture.
+  const [ready, setReady] = useState(false);
+  const [veilLeaving, setVeilLeaving] = useState(false);
+  const [playEntrance, setPlayEntrance] = useState(false);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -124,6 +130,15 @@ export default function Home() {
     }
   }, []);
 
+  // The day has arrived: lift the veil and let the Today zone rise in beneath
+  // it. Kicked exactly once, when the first fetch settles (success or failure).
+  const markReady = useCallback(() => {
+    setVeilLeaving(true); // veil begins its fade
+    setPlayEntrance(true); // content rises in as the veil clears — a crossfade
+    setTimeout(() => setReady(true), 400); // unmount the veil once faded
+    setTimeout(() => setPlayEntrance(false), 1200); // one-shot: don't replay
+  }, []);
+
   // initial load — quote only fires if today's entry already exists
   useEffect(() => {
     const d = new Date();
@@ -138,9 +153,10 @@ export default function Home() {
       .then((todayEntry) => {
         if (todayEntry) refreshQuote();
       })
-      .catch(() => showFlash("Couldn't load your entries. Reload to retry."));
+      .catch(() => showFlash("Couldn't load your entries. Reload to retry."))
+      .finally(markReady);
     loadPastEntries();
-  }, [loadEntries, refreshQuote, showFlash, loadPastEntries]);
+  }, [loadEntries, refreshQuote, showFlash, loadPastEntries, markReady]);
 
   // The earned-reveal is a one-shot: once the quote has arrived and played its
   // entrance, drop the flag so switching tabs doesn't replay the ceremony.
@@ -552,6 +568,8 @@ export default function Home() {
 
   return (
     <div className="wrap">
+      {!ready && <ColdStart leaving={veilLeaving} />}
+
       <header>
         <div className="brand">
           <MoonPhaseIcon />
@@ -570,7 +588,11 @@ export default function Home() {
 
       {/* ===== ZONE 1 — TODAY ===== */}
       <section
-        className={"today" + (hasLoggedToday ? " today--logged" : "")}
+        className={
+          "today" +
+          (hasLoggedToday ? " today--logged" : "") +
+          (playEntrance ? " today--enter" : "")
+        }
         aria-label="Today"
         hidden={tab !== "today"}
       >

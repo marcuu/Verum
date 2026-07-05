@@ -550,6 +550,153 @@ button:disabled {
   }
 }
 
+/* ===== Cold start ==========================================================
+   A PWA launch waits on the network; the veil holds the empty state back until
+   the real day is here. Opaque from frame one — nothing wrong ever flashes.
+   The moon fades in only after a beat, so a quick load lifts the veil on an
+   empty canvas (no moon at all) and only a slow load earns the breathing moon.
+   Then the Today zone rises in beneath the clearing veil — one composed arrival. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cold-start {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Opaque immediately: the veil must cover the first paint, no fade-in. */
+  background: var(--bg);
+}
+
+.cold-start--leaving {
+  animation: cold-start-lift 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: none;
+}
+
+@keyframes cold-start-lift {
+  to {
+    opacity: 0;
+  }
+}
+
+/* The moon is delayed on purpose: a load that finishes before ~0.28s lifts the
+   veil while the moon is still fully transparent, so fast launches never see it. */
+.cold-start-moon {
+  opacity: 0;
+  animation:
+    cold-moon-appear 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both,
+    cold-moon-breathe 3.2s ease-in-out 0.83s infinite;
+}
+
+@keyframes cold-moon-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cold-moon-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+.cold-start .cs-disc {
+  fill: var(--ink-2);
+}
+
+/* The shadow disc slides across the lit disc to wax and wane the light. Its
+   resting offset is a gentle gibbous, used as-is when motion is reduced. */
+.cold-start .cs-shadow {
+  fill: var(--bg);
+  transform: translateX(-20px);
+  animation: cold-moon-wax 5.2s ease-in-out 0.83s infinite alternate;
+}
+
+@keyframes cold-moon-wax {
+  from {
+    transform: translateX(-13px);
+  }
+  to {
+    transform: translateX(-30px);
+  }
+}
+
+/* The Today zone's arrival: each element rises and settles a beat after the one
+   above it — the same quiet hand as the earned quote, applied to the whole day. */
+.today--enter > * {
+  animation: today-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.today--enter > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.today--enter > *:nth-child(2) {
+  animation-delay: 0.07s;
+}
+.today--enter > *:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.today--enter > *:nth-child(4) {
+  animation-delay: 0.17s;
+}
+.today--enter > *:nth-child(5) {
+  animation-delay: 0.22s;
+}
+.today--enter > *:nth-child(6) {
+  animation-delay: 0.27s;
+}
+.today--enter > *:nth-child(n + 7) {
+  animation-delay: 0.32s;
+}
+
+@keyframes today-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No breath, no sweep, no stagger — the moon rests at its gibbous pose and the
+     day simply appears. The delayed reveal is dropped so fast loads still show
+     nothing, but a slow load gets a calm, static moon. */
+  .cold-start-moon {
+    opacity: 1;
+    animation: cold-moon-appear 0.01s linear 0.28s both;
+  }
+  .cold-start .cs-shadow {
+    animation: none;
+  }
+  .today--enter > * {
+    animation: none;
+  }
+}
+
 /* overflow menu — delete is one extra tap away from the vote buttons */
 .qOverflow {
   position: relative;
