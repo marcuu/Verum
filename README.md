@@ -104,8 +104,8 @@ reminders. Setup:
 4. Open the app → **Reminders** → *Enable reminders*, then *Send test*.
 
 Reminders are driven by `vercel.json`: one once-daily cron per job (daily
-reminder 19:30, streak rescue 21:00, weekly reflection 17:00, monthly backup
-09:00 — all UTC), each hitting `/api/cron/notifications?job=…`. **Delivery
+reminder 17:30, streak rescue 19:00, weekly reflection 15:00, monthly backup
+07:00 — all UTC), each hitting `/api/cron/notifications?job=…`. **Delivery
 times are fixed by this schedule**, not user-configurable (the settings UI
 shows them as facts), and a fixed UTC time lands an hour later on the clock
 during BST. Jobs apply their own eligibility (enabled flag, entry/streak

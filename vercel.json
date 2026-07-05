@@ -2,19 +2,19 @@
   "crons": [
     {
       "path": "/api/cron/notifications?job=backup",
-      "schedule": "0 9 * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/notifications?job=weekly",
-      "schedule": "0 17 * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/notifications?job=daily",
-      "schedule": "30 19 * * *"
+      "schedule": "30 17 * * *"
     },
     {
       "path": "/api/cron/notifications?job=rescue",
-      "schedule": "0 21 * * *"
+      "schedule": "0 19 * * *"
     }
   ]
 }

@@ -23,10 +23,10 @@ type Preferences = {
 // shown here in UK local time. They are facts to display, not settings to
 // edit — a time picker wired to nothing is worse than no picker.
 const DELIVERY_TIMES = {
-  daily: "20:30",
-  rescue: "22:00",
-  weekly: "18:00",
-  backup: "10:00",
+  daily: "18:30",
+  rescue: "20:00",
+  weekly: "16:00",
+  backup: "08:00",
 } as const;
 
 type Delivery = {
