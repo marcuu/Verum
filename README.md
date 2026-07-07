@@ -114,11 +114,19 @@ only if there's no entry for the local day — and subscriptions the push
 service reports as gone (404/410) are disabled. An external scheduler must
 send `Authorization: Bearer <CRON_SECRET>`.
 
-**Backups are automatic.** The monthly job writes a JSON snapshot (entries,
-quotes, life markers) to the private `verum-backups` Storage bucket — one
-object per month, upserted — and the push notification reports the outcome
-instead of asking you to export by hand. Manual JSON/Markdown exports remain
-in the header menu.
+**Backups are automatic — and sealed.** The monthly job writes a JSON
+snapshot (entries, quotes, life markers) to the private `verum-backups`
+Storage bucket — one object per month, upserted — and the push notification
+reports the outcome instead of asking you to export by hand. When
+`BACKUP_PUBLIC_KEY` holds an [age](https://age-encryption.org) recipient, the
+snapshot is encrypted to that key before upload (`.json.age`): neither the
+server nor the bucket ever holds a key that can read it back, so a bucket or
+service-key compromise yields ciphertext. The matching identity file stays
+offline with you (generate with `age-keygen`; store in a password manager or
+on paper — **if you lose it, encrypted backups are unrecoverable by design**).
+On its first encrypted run the job deletes that month's plaintext object;
+sweep older months once by hand. Manual JSON/Markdown exports remain in the
+header menu.
 
 **The system pages its owner.** If a cron job throws, the route returns 500
 (so Vercel records the failed run) and sends a priority `system_alert` push —
@@ -132,8 +140,10 @@ at most one per day — pointing at the delivery history panel.
   row shows the push-service error. Disable/re-enable reminders on the device
   to re-subscribe.
 - **Restore from backup**: Supabase Dashboard → Storage → `verum-backups`,
-  download the latest `verum-backup-YYYY-MM.json`; its arrays match the
-  tables one-to-one.
+  download the latest object. Encrypted (`.json.age`):
+  `age -d -i verum-backup-key.txt verum-backup-YYYY-MM.json.age > backup.json`
+  — standard age CLI, nothing project-specific. Plaintext (`.json`): open
+  directly. Either way the arrays match the tables one-to-one.
 - **Token leaked**: rotate `JOURNAL_ACCESS_TOKEN` and `SESSION_SECRET` in
   Vercel and redeploy — every outstanding session dies with the secret.
 
@@ -188,3 +198,4 @@ Get the Supabase keys from **Dashboard → Project Settings → API**. The
 | `WEB_PUSH_PRIVATE_KEY` | for push | **Secret** — VAPID private key, server only |
 | `WEB_PUSH_SUBJECT` | for push | `mailto:` contact for the push service |
 | `CRON_SECRET` | for push | **Secret** — protects the cron route |
+| `BACKUP_PUBLIC_KEY` | no | age recipient (`age1…`) monthly backups are sealed to; keep the identity offline |

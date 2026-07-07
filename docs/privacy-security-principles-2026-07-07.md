@@ -97,6 +97,15 @@ Ordered by risk-per-effort. Items 2–5 and 7 are a day or two combined.
    only. A bucket or service-key compromise then yields ciphertext. This is
    "assume breach" made concrete for the one artifact designed to outlive
    everything.
+   **IMPLEMENTED 2026-07-07** — age format via the zero-dependency
+   `age-encryption` package (restore = standard `age` CLI, no bespoke
+   container). `BACKUP_PUBLIC_KEY` seals; absent key = plaintext (documented
+   default), malformed key = loud failure, never a silent plaintext
+   fallback; first encrypted run sweeps that month's plaintext object.
+   Round-trip, no-plaintext-in-ciphertext, and hard-fail properties are
+   pinned in `test/backup.test.ts`. Awaiting the owner's `age-keygen` run +
+   Vercel env var — the private key must never transit this repo, Vercel, or
+   an agent session.
 3. **Private lock-screen mode, on by default** — *P4, S.*
    A `discreet_notifications` preference: reminders say "What happened
    today?" instead of quoting yesterday's entry; own-voice excerpts become

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { Encrypter } from "age-encryption";
 import {
   T_ENTRIES,
   T_LIFE_MARKERS,
@@ -11,19 +12,37 @@ import {
 //
 // One object per calendar month, upserted, so a re-run (cron retry, manual
 // invocation) refreshes that month's snapshot instead of piling up copies.
-// Restore path: download the object, and re-insert; the shape matches the
-// tables one-to-one.
+//
+// Encryption (assume the bucket leaks): when BACKUP_PUBLIC_KEY holds an age
+// recipient ("age1…"), the snapshot is sealed to that key before upload and
+// stored as .json.age — the server and bucket never hold a key that can read
+// it back; the matching identity lives offline with the owner. A missing key
+// means plaintext (zero-config default, documented); a *malformed* key is a
+// hard failure, never a silent plaintext fallback. Restore path: standard
+// age CLI (`age -d -i key.txt verum-backup-YYYY-MM.json.age`).
 
 export const BACKUP_BUCKET = "verum-backups";
 
 export type BackupResult = {
   object: string;
   bytes: number;
+  encrypted: boolean;
   counts: { entries: number; quotes: number; life_markers: number };
 };
 
-export function backupObjectName(month: string): string {
-  return `verum-backup-${month}.json`;
+export function backupObjectName(month: string, encrypted: boolean): string {
+  return `verum-backup-${month}.json${encrypted ? ".age" : ""}`;
+}
+
+async function sealIfConfigured(
+  body: string
+): Promise<{ data: string | Uint8Array; encrypted: boolean }> {
+  const recipient = process.env.BACKUP_PUBLIC_KEY;
+  if (!recipient) return { data: body, encrypted: false };
+
+  const encrypter = new Encrypter();
+  encrypter.addRecipient(recipient); // throws on a malformed recipient
+  return { data: await encrypter.encrypt(body), encrypted: true };
 }
 
 export async function runBackupToStorage(
@@ -56,19 +75,31 @@ export async function runBackupToStorage(
   };
 
   const body = JSON.stringify(payload, null, 2);
-  const object = backupObjectName(month);
+  const { data, encrypted } = await sealIfConfigured(body);
+  const object = backupObjectName(month, encrypted);
 
   const { error } = await db.storage
     .from(BACKUP_BUCKET)
-    .upload(object, body, {
-      contentType: "application/json",
+    .upload(object, typeof data === "string" ? data : Buffer.from(data), {
+      contentType: encrypted ? "application/octet-stream" : "application/json",
       upsert: true,
     });
   if (error) throw error;
 
+  // First encrypted run after a plaintext era: don't leave this month's
+  // plaintext object sitting next to the ciphertext. Best-effort; earlier
+  // months are a one-time manual sweep (see README → Operations).
+  if (encrypted) {
+    await db.storage
+      .from(BACKUP_BUCKET)
+      .remove([backupObjectName(month, false)])
+      .catch(() => {});
+  }
+
   return {
     object,
-    bytes: Buffer.byteLength(body, "utf8"),
+    bytes: typeof data === "string" ? Buffer.byteLength(data, "utf8") : data.length,
+    encrypted,
     counts: payload.counts,
   };
 }

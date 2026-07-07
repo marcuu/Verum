@@ -35,7 +35,9 @@ export async function runMonthlyBackup({
   // A failed backup is the one monthly message that must not auto-dismiss —
   // it means the record is only as safe as the last snapshot.
   const body = backup
-    ? `Backed up ${backup.counts.entries} entries to storage.`
+    ? `Backed up ${backup.counts.entries} entries to storage${
+        backup.encrypted ? ", encrypted" : ""
+      }.`
     : "Automatic backup failed — export a copy manually?";
 
   const counts = { sent: 0, skipped: 0, failed: 0 };
