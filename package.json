@@ -13,8 +13,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.0",
-    "lucide-react": "^1.23.0",
+    "@supabase/supabase-js": "^2.110.2",
+    "lucide-react": "^1.24.0",
     "next": "^16.2.10",
     "react": "19.2.7",
     "react-dom": "19.2.7",
@@ -31,6 +31,6 @@
     "eslint-config-next": "^15.5.18",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   }
 }
